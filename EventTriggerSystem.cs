@@ -351,7 +351,7 @@ namespace OVGU.VAR.VRResist
         {
             if (nPC.contr != null && nPC.locom != null)
             {
-                nPC.contr.Speak(clipName);
+                nPC.contr.speak(clipName);
                 nPC.locom.lookAt(me);
                 nPC.locom.setTurnTarget(me);
             }
@@ -405,7 +405,7 @@ namespace OVGU.VAR.VRResist
             NPC npc = GetNPCByName(npcName);
             if (npc.contr != null && npc.locom != null)
             {
-                npc.contr.Speak(audioClip);
+                npc.contr.speak(audioClip);
                 npc.locom.lookAt(me);
                 npc.locom.setTurnTarget(me);
 

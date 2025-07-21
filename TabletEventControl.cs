@@ -18,7 +18,7 @@ namespace OVGU.VAR.VRResist
         [SerializeField] WebSocketClient webSocketClient;
         [Header("Scenario Selection")]
 
-        [SerializeField] ScenarioManager scenarioManager;
+
         [SerializeField] TMP_Dropdown scenarioDropdown;
 
         [Header("Pre-configured UI Sections")]
@@ -98,34 +98,16 @@ namespace OVGU.VAR.VRResist
             {
                 Debug.LogWarning("[TabletEventControl] WebSocketClient is not assigned!");
             }
-
-
-            if (scenarioManager == null)
-            {
-                Debug.LogWarning("[TabletEventControl] ScenarioManager not assigned!");
-                return;
-            }
-
             if (scenarioDropdown == null)
             {
                 Debug.LogWarning("[TabletEventControl] Scenario dropdown not assigned!");
                 return;
             }
 
-            // Subscribe to scenario changes
-            scenarioManager.OnScenarioChanged += OnScenarioChanged;
-
-            // Populate dropdown with scenario names
-            PopulateScenarioDropdown();
-
             // Setup dropdown change listener
             scenarioDropdown.onValueChanged.AddListener(OnScenarioDropdownChanged);
 
             // Load initial scenario
-            if (scenarioManager.GetScenarioCount() > 0)
-            {
-                OnScenarioChanged(scenarioManager.GetCurrentScenario());
-            }
 
             if (enableDetailedLogging)
                 Debug.Log("[TabletEventControl] Scenario dropdown setup complete");
@@ -134,13 +116,24 @@ namespace OVGU.VAR.VRResist
         /// <summary>
         /// Populate scenario dropdown with available scenarios
         /// </summary>
-        void PopulateScenarioDropdown()
+        void PopulateScenarioDropdown(string[] content)
         {
-            if (scenarioDropdown == null || scenarioManager == null) return;
+            if (scenarioDropdown == null) return;
 
             scenarioDropdown.ClearOptions();
 
-            var scenarioNames = scenarioManager.GetScenarioNames();
+            //Unpack the content, odd entries are scenario ids, even entries are scenario names 
+            var scenarioNames = new List<string>();
+            for (int i = 0; i < content.Length; i += 2)
+            {
+                if (i + 1 < content.Length)
+                {
+                    var scenarioId = content[i];
+                    var scenarioName = content[i + 1];
+                    scenarioNames.Add(scenarioName);
+                }
+            }
+
             var options = new List<TMP_Dropdown.OptionData>();
 
             foreach (var name in scenarioNames)
@@ -159,10 +152,7 @@ namespace OVGU.VAR.VRResist
         /// </summary>
         void OnScenarioDropdownChanged(int scenarioIndex)
         {
-            if (scenarioManager != null)
-            {
-                scenarioManager.SwitchToScenario(scenarioIndex);
-            }
+
         }
 
         /// <summary>
@@ -541,8 +531,8 @@ namespace OVGU.VAR.VRResist
                     // Update patient audio clips if needed
                     break;
                 case "scenarioList":
-                // Update task display if this tablet also shows tasks
-                case ""
+                    // Update task display if this tablet also shows tasks
+                    PopulateScenarioDropdown(message.content);
 
                     break;
                 default:

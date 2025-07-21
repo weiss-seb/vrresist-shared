@@ -166,32 +166,6 @@ public class WebSocketClient : MonoBehaviour
         SendEventMessage(msg);
     }
 
-    // void Update()
-    // {
-    //     lock (messageQueue)
-    //     {
-    //         while (messageQueue.Count > 0)
-    //         {
-    //             string message = messageQueue.Dequeue();
-    //             Debug.Log("[WSClient] Processing message from queue: " + message);
-    //             try
-    //             {
-    //                 EventMessageWrapper wrapper = JsonUtility.FromJson<EventMessageWrapper>(message);
-    //                 if (wrapper.type == null)
-    //                 {
-    //                     Debug.LogWarning("[WSClient] Received message with null type.");
-    //                     continue;
-    //                 }
-    //                 EventMessage msg = new EventMessage(wrapper.type, wrapper.content);
-    //                 OnMessageReceive.Invoke(msg);
-    //             }
-    //             catch (Exception e)
-    //             {
-    //                 Debug.LogError($"[WSClient] Error processing message: " + message + $"{e.Message}");
-    //             }
-    //         }
-    //     }
-    // }
 
     void Update()
     {

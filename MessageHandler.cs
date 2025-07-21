@@ -534,6 +534,13 @@ namespace OVGU.VAR.VRResist
             {
                 Debug.Log("[MessageHandler] Handling refresh request");
 
+                //Send scene information by getting scene info from scenemanager and packing it into an EventMessage
+                if (scenarioSceneManager != null)
+                {
+                    var sceneInfo = scenarioSceneManager.GetAllSceneInfo();
+                    SendEventMessageToClient(new EventMessage("scenarioList", sceneInfo));
+                }
+
                 // Send available audio clips for each NPC
                 SendEventMessageToClient(new EventMessage("audioClipsListChefarzt", GetAudioClipsForCharacter(chefarzt)));
                 SendEventMessageToClient(new EventMessage("audioClipsListKollege", GetAudioClipsForCharacter(kollege)));

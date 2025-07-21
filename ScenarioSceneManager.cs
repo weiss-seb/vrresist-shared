@@ -3,6 +3,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
 using UnityEngine.Events;
+using System;
+using System.Collections.Generic;
 
 namespace OVGU.VAR.VRResist
 {
@@ -30,6 +32,18 @@ namespace OVGU.VAR.VRResist
         private bool isLoading = false;
 
         public UnityEvent<EventMessage> OnScenarioLoaded;
+
+
+        [System.Serializable]
+        public class ScenarioMapping
+        {
+            public string scenarioId;
+            public string scenarioTitle;
+            public string sceneName;
+        }
+
+        [SerializeField]
+        private List<ScenarioMapping> scenarioMappings = new List<ScenarioMapping>();
 
         void Start()
         {
@@ -322,34 +336,48 @@ namespace OVGU.VAR.VRResist
                 }
 
                 bool sceneExists = IsSceneInBuildSettings(sceneData.sceneName);
-                string status = sceneExists ? "✓ EXISTS" : "✗ MISSING";
+                string status = sceneExists ? " EXISTS" : " MISSING";
 
                 Debug.Log($"  Scenario {i}: {sceneData.scenarioName} -> {sceneData.sceneName} [{status}]");
             }
         }
-    }
 
-    /// <summary>
-    /// Data structure for scenario scene configuration
-    /// </summary>
-    [System.Serializable]
-    public class ScenarioSceneData
-    {
-        [Header("Scenario Information")]
-        public int scenarioId;
-        public string scenarioName;
+        public string[] GetAllSceneInfo()
+        {
+            var sceneInfoList = new List<string>();
+            foreach (var mapping in scenarioMappings)
+            {
+                sceneInfoList.Add(mapping.scenarioId);
+                sceneInfoList.Add(mapping.scenarioTitle);
+            }
+            return sceneInfoList.ToArray();
+        }
 
-        [Header("Scene Configuration")]
-        [Tooltip("Name of the Unity scene to load for this scenario")]
-        public string sceneName;
 
-        [Header("Loading Configuration")]
-        [Tooltip("Message displayed during scene loading")]
-        public string loadingMessage;
-
-        [Header("Scenario Info")]
-        [TextArea(3, 6)]
-        [Tooltip("Information text displayed to user after scene loads")]
-        public string scenarioInfoText;
     }
 }
+
+/// <summary>
+/// Data structure for scenario scene configuration
+/// </summary>
+[System.Serializable]
+public class ScenarioSceneData
+{
+    [Header("Scenario Information")]
+    public int scenarioId;
+    public string scenarioName;
+
+    [Header("Scene Configuration")]
+    [Tooltip("Name of the Unity scene to load for this scenario")]
+    public string sceneName;
+
+    [Header("Loading Configuration")]
+    [Tooltip("Message displayed during scene loading")]
+    public string loadingMessage;
+
+    [Header("Scenario Info")]
+    [TextArea(3, 6)]
+    [Tooltip("Information text displayed to user after scene loads")]
+    public string scenarioInfoText;
+}
+
