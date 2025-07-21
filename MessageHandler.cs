@@ -17,23 +17,20 @@ namespace OVGU.VAR.VRResist
     public class MessageHandler : MonoBehaviour
     {
         [Header("NPC References")]
-        public GameObject chefarzt, kollege, patient, doctor, anesthesiologist;
-
+        public GameObject chefarzt, kollege, patient;
         [Header("System References")]
         public EventTriggerSystem eventTriggerSystem;
         public StudyTaskManager taskManager;
-        [SerializeField] CameraControl cameraController;
+
         [SerializeField] MathTaskManager mathTaskManager;
         [SerializeField] NBackTask nBackTaskManager;
-
-        [SerializeField] SO_ScenarioData scenarioData;
 
         [Header("UI References")]
         public TMP_Text debugText;
         [SerializeField] ScenarioSceneManager scenarioSceneManager;
 
-        [Header("Network")]
-        [SerializeField] TCPServer _tcpServer;
+
+        TCPServer _tcpServer;
 
         [Header("XR Prefab")]
         [SerializeField] GameObject xrPrefab;
@@ -55,13 +52,6 @@ namespace OVGU.VAR.VRResist
                 {
                     Debug.LogError("[MessageHandler] ScenarioSceneManager not found in scene!");
                 }
-            }
-
-            if (scenarioSceneManager != null)
-            {
-
-
-                /// 
             }
         }
 
@@ -89,6 +79,8 @@ namespace OVGU.VAR.VRResist
             {
                 scenarioSceneManager = FindObjectOfType<ScenarioSceneManager>();
             }
+
+            _tcpServer = GameObject.Find("TCPServer").GetComponent<TCPServer>();
 
         }
 
@@ -276,6 +268,8 @@ namespace OVGU.VAR.VRResist
                     HandleRequest(msg);
                     break;
 
+
+                //TODO: put nback and math task handling here
                 case "task":
                     if (taskManager != null)
                     {
@@ -545,16 +539,6 @@ namespace OVGU.VAR.VRResist
                 SendEventMessageToClient(new EventMessage("audioClipsListKollege", GetAudioClipsForCharacter(kollege)));
                 SendEventMessageToClient(new EventMessage("audioClipsListPatient", GetAudioClipsForCharacter(patient)));
 
-                // Send available events and tasks (if still needed)
-                if (eventTriggerSystem != null)
-                    SendEventMessageToClient(new EventMessage("eventList", eventTriggerSystem.eventList));
-
-                // Send simplified task list (legacy task blocks removed, only cognitive tasks supported)
-                if (taskManager != null)
-                {
-                    string[] simplifiedTaskList = new string[] { "math_task", "nback_task", "noTasks" };
-                    SendEventMessageToClient(new EventMessage("taskList", simplifiedTaskList));
-                }
             }
         }
 
@@ -623,8 +607,6 @@ namespace OVGU.VAR.VRResist
                 case "chefarzt": return chefarzt;
                 case "kollege": return kollege;
                 case "patient": return patient;
-                case "doctor": return doctor;
-                case "anesthesiologist": return anesthesiologist;
                 default: return null;
             }
         }
@@ -634,7 +616,7 @@ namespace OVGU.VAR.VRResist
         /// </summary>
         private void StopAllNPCs()
         {
-            GameObject[] npcs = { chefarzt, kollege, patient, doctor, anesthesiologist };
+            GameObject[] npcs = { chefarzt, kollege, patient };
 
             foreach (var npc in npcs)
             {

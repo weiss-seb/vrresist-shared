@@ -1,9 +1,7 @@
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
-using Unity.Android.Gradle.Manifest;
 using UnityEngine.Events;
 
 namespace OVGU.VAR.VRResist
@@ -37,7 +35,6 @@ namespace OVGU.VAR.VRResist
         {
             InitializeSceneData();
             ShowLoadingScreen("Warten auf Szenario-Auswahl...");
-
 
             DontDestroyOnLoad(this.gameObject);
         }
