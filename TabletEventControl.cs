@@ -16,11 +16,9 @@ namespace OVGU.VAR.VRResist
     {
         [Header("System References")]
         [SerializeField] WebSocketClient webSocketClient;
-        [SerializeField] ScenarioManager scenarioManager;
-        [Tooltip("Only needed if this tablet also displays tasks locally")]
-        [SerializeField] StudyTaskManager studyTaskManager;
-
         [Header("Scenario Selection")]
+
+        [SerializeField] ScenarioManager scenarioManager;
         [SerializeField] TMP_Dropdown scenarioDropdown;
 
         [Header("Pre-configured UI Sections")]
@@ -55,12 +53,7 @@ namespace OVGU.VAR.VRResist
         [SerializeField] Button endStudyButton;
         [SerializeField] Button refreshButton;
 
-        [Header("Study Configuration")]
-        [Tooltip("Available NPC walk positions - must match button order")]
-        [SerializeField]
-        string[] availablePositions = {
-            "bedLeft1", "bedLeft2", "bedRight1", "doorInside", "doorOutside", "outside"
-        };
+
 
         [Header("Dynamic Audio Configuration")]
         [Tooltip("Audio clips and labels are loaded dynamically from ScenarioManager")]
@@ -92,8 +85,21 @@ namespace OVGU.VAR.VRResist
         /// <summary>
         /// Setup scenario dropdown and subscribe to scenario changes
         /// </summary>
-        void SetupScenarioDropdown()
+        public void SetupScenarioDropdown()
         {
+            //Send a message tio HMD to request scenario list
+            if (webSocketClient != null)
+            {
+                var requestMessage = new EventMessage("request", new string[] { "scenarioList" });
+                webSocketClient.SendEventMessage(requestMessage);
+                Debug.Log("[TabletEventControl] Requested scenario list from HMD");
+            }
+            else
+            {
+                Debug.LogWarning("[TabletEventControl] WebSocketClient is not assigned!");
+            }
+
+
             if (scenarioManager == null)
             {
                 Debug.LogWarning("[TabletEventControl] ScenarioManager not assigned!");
@@ -184,16 +190,7 @@ namespace OVGU.VAR.VRResist
         /// </summary>
         void UpdateUIForScenario(SO_ScenarioData scenario)
         {
-            // Update available positions - convert Transform array to string array if needed
-            if (scenario.availableWalkPositions != null && scenario.availableWalkPositions.Length > 0)
-            {
-                string[] positionNames = new string[scenario.availableWalkPositions.Length];
-                for (int i = 0; i < scenario.availableWalkPositions.Length; i++)
-                {
-                    positionNames[i] = scenario.availableWalkPositions[i] != null ? scenario.availableWalkPositions[i].name : $"Position{i}";
-                }
-                availablePositions = positionNames;
-            }
+            //todo add back buttons for NPC walk positions
 
             // Update audio clips and labels for each NPC
             UpdateNPCAudioData("chefarzt", scenario.GetAudioClipsForNPC("chefarzt"), scenario.GetAudioLabelsForNPC("chefarzt"));
@@ -292,7 +289,7 @@ namespace OVGU.VAR.VRResist
         /// <summary>
         /// Request initial data from HMD (audio clips, available positions, etc.)
         /// </summary>
-        void RequestInitialData()
+        public void RequestInitialData()
         {
             if (webSocketClient != null)
             {
@@ -323,10 +320,6 @@ namespace OVGU.VAR.VRResist
         /// </summary>
         void SetupNPCActionButtons()
         {
-            // Setup walk buttons for each NPC
-            SetupWalkButtons(chefarztWalkButtons, "chefarzt");
-            SetupWalkButtons(kollegeWalkButtons, "kollege");
-            SetupWalkButtons(patientWalkButtons, "patient");
 
             // Setup talk buttons for each NPC
             SetupTalkButtons(chefarztTalkButtons, "chefarzt", chefarztAudioClips, chefarztAudioLabels);
@@ -334,32 +327,7 @@ namespace OVGU.VAR.VRResist
             SetupTalkButtons(patientTalkButtons, "patient", patientAudioClips, patientAudioLabels);
         }
 
-        /// <summary>
-        /// Setup walk buttons for a specific NPC
-        /// </summary>
-        void SetupWalkButtons(Button[] buttons, string npcName)
-        {
-            if (buttons == null) return;
 
-            for (int i = 0; i < buttons.Length && i < availablePositions.Length; i++)
-            {
-                if (buttons[i] != null)
-                {
-                    string position = availablePositions[i];
-                    buttons[i].onClick.AddListener(() => SendNPCWalkCommand(npcName, position));
-
-                    // Update button text to show position
-                    var buttonText = buttons[i].GetComponentInChildren<TMPro.TextMeshProUGUI>();
-                    if (buttonText != null)
-                    {
-                        buttonText.text = GetFriendlyPositionName(position);
-                    }
-
-                    if (enableDetailedLogging)
-                        Debug.Log($"[TabletEventControl] Setup walk button: {npcName} → {position}");
-                }
-            }
-        }
 
         /// <summary>
         /// Setup talk buttons for a specific NPC
@@ -572,12 +540,10 @@ namespace OVGU.VAR.VRResist
                 case "audioClipsListPatient":
                     // Update patient audio clips if needed
                     break;
-                case "taskList":
-                    // Update task display if this tablet also shows tasks
-                    if (studyTaskManager != null)
-                    {
-                        // Handle task list updates
-                    }
+                case "scenarioList":
+                // Update task display if this tablet also shows tasks
+                case ""
+
                     break;
                 default:
                     // Handle other message types as needed
