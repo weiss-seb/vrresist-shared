@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
@@ -475,23 +475,23 @@ namespace OVGU.VAR.VRResist
             }
 
             string scenarioName = msg.content[0];
-            string scenarioDataJson = msg.content[1];
+            string scenarioID = msg.content[1];
 
             Debug.Log($"[MessageHandler] Changing to scenario: {scenarioName}");
 
             try
             {
-                // Parse scenario data from JSON
-                var scenarioData = JsonUtility.FromJson<ScenarioData>(scenarioDataJson);
+                // Parse scenario data from msg.content[1] without using json. The 
+
 
                 //TODO scenariodata should be completely unpacked and injected into the next scene so that we can set up message handler there with the new characters and positions
 
 
-                if (scenarioData != null && scenarioSceneManager != null)
+                if (scenarioSceneManager != null)
                 {
                     // Use ScenarioSceneManager to load the appropriate scene
-                    scenarioSceneManager.LoadScenarioScene(scenarioData.scenarioId, scenarioData.scenarioInfoText);
-                    Debug.Log($"[MessageHandler] Requested scene load for scenario: {scenarioName} (ID: {scenarioData.scenarioId})");
+                    scenarioSceneManager.LoadScenarioScene(int.Parse(scenarioID));
+                    Debug.Log($"[MessageHandler] Requested scene load for scenario: {scenarioName} (ID: {scenarioID})");
                 }
                 else if (scenarioSceneManager == null)
                 {

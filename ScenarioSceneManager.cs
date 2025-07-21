@@ -92,8 +92,13 @@ namespace OVGU.VAR.VRResist
         /// <summary>
         /// Load scenario scene by ID (called from MessageHandler)
         /// </summary>
-        public void LoadScenarioScene(int scenarioId, string scenarioInfoText = "")
+        public void LoadScenarioScene(int scenarioId)
         {
+            string infoText = scenarioScenes[scenarioId - 1].scenarioInfoText;
+            if (string.IsNullOrEmpty(infoText))
+            {
+                infoText = "Keine Informationen für dieses Szenario verfügbar.";
+            }
             if (isLoading)
             {
                 Debug.LogWarning("[ScenarioSceneManager] Already loading a scene, ignoring request");
@@ -114,7 +119,7 @@ namespace OVGU.VAR.VRResist
             }
 
             // Use provided info text or fall back to configured text
-            string infoText = !string.IsNullOrEmpty(scenarioInfoText) ? scenarioInfoText : sceneData.scenarioInfoText;
+
 
             StartCoroutine(LoadSceneCoroutine(sceneData, infoText));
         }

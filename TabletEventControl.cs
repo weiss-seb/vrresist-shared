@@ -175,6 +175,22 @@ namespace OVGU.VAR.VRResist
             UpdateUIForScenario(newScenario);
         }
 
+        public void StartSelectedScenario()
+        {
+            //Send a message to HMD to load up the selected scenario
+            if (webSocketClient != null && currentScenario != null)
+            {
+                var message = new EventMessage("startScenario", new string[] { scenarioDropdown.value.ToString() });
+                webSocketClient.SendEventMessage(message);
+                Debug.Log($"[TabletEventControl] Starting scenario: {currentScenario.scenarioName}");
+            }
+            else
+            {
+                Debug.LogWarning("[TabletEventControl] WebSocketClient is null or no scenario selected!");
+            }
+
+        }
+
         /// <summary>
         /// Update UI elements based on current scenario
         /// </summary>
