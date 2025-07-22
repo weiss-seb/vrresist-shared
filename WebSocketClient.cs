@@ -21,7 +21,7 @@ public class WebSocketClient : MonoBehaviour
 
     private readonly Queue<string> messageQueue = new Queue<string>();
 
-    public UnityEvent<EventMessage> OnMessageReceive;
+    public UnityEvent<string> OnMessageReceive;
     public UnityEvent<string> OnConnected;
     public UnityEvent OnConnectionFailed;
 
@@ -176,7 +176,7 @@ public class WebSocketClient : MonoBehaviour
             {
                 string msg = messageQueue.Dequeue();
                 EventMessage eventMessage = JsonUtility.FromJson<EventMessage>(msg);
-                OnMessageReceive.Invoke(eventMessage);
+                OnMessageReceive.Invoke(msg);
             }
             catch (Exception e)
             {

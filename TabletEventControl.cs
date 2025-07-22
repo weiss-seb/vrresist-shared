@@ -67,42 +67,30 @@ namespace OVGU.VAR.VRResist
         [Header("Debug Settings")]
         [SerializeField] bool enableDetailedLogging = true;
 
-        // Current scenario data
-        private SO_ScenarioData currentScenario;
-
         void Start()
         {
             // Setup scenario dropdown
-            SetupScenarioDropdown();
+            //SetupScenarioDropdown();
 
             // Setup pre-configured UI button listeners
-            SetupPreConfiguredUI();
+            // SetupPreConfiguredUI();
 
             // Request initial data from HMD
-            RequestInitialData();
+            // RequestInitialData();
         }
 
         /// <summary>
         /// Setup scenario dropdown and subscribe to scenario changes
         /// </summary>
-        public void SetupScenarioDropdown()
+        public void SetupScenarioDropdown(string jSonMessage)
         {
-            //Send a message tio HMD to request scenario list
-            if (webSocketClient != null)
-            {
-                var requestMessage = new EventMessage("request", new string[] { "scenarioList" });
-                webSocketClient.SendEventMessage(requestMessage);
-                Debug.Log("[TabletEventControl] Requested scenario list from HMD");
-            }
-            else
-            {
-                Debug.LogWarning("[TabletEventControl] WebSocketClient is not assigned!");
-            }
-            if (scenarioDropdown == null)
-            {
-                Debug.LogWarning("[TabletEventControl] Scenario dropdown not assigned!");
-                return;
-            }
+            Debug.Log(jSonMessage);
+            EventMessage e = JsonUtility.FromJson<EventMessage>(jSonMessage);
+
+            //get the scenario list from the event message
+
+            PopulateScenarioDropdown(e.content);
+
 
             // Setup dropdown change listener
             scenarioDropdown.onValueChanged.AddListener(OnScenarioDropdownChanged);
@@ -155,34 +143,14 @@ namespace OVGU.VAR.VRResist
 
         }
 
-        /// <summary>
-        /// Handle scenario change event from ScenarioManager
-        /// </summary>
-        void OnScenarioChanged(SO_ScenarioData newScenario)
-        {
-            if (newScenario == null)
-            {
-                Debug.LogWarning("[TabletEventControl] Received null scenario data!");
-                return;
-            }
-
-            currentScenario = newScenario;
-
-            if (enableDetailedLogging)
-                Debug.Log($"[TabletEventControl] Scenario changed to: {newScenario.scenarioName}");
-
-            // Update UI with new scenario data
-            UpdateUIForScenario(newScenario);
-        }
-
         public void StartSelectedScenario()
         {
             //Send a message to HMD to load up the selected scenario
-            if (webSocketClient != null && currentScenario != null)
+            if (webSocketClient != null)
             {
                 var message = new EventMessage("startScenario", new string[] { scenarioDropdown.value.ToString() });
                 webSocketClient.SendEventMessage(message);
-                Debug.Log($"[TabletEventControl] Starting scenario: {currentScenario.scenarioName}");
+                Debug.Log($"[TabletEventControl] Starting scenario:");
             }
             else
             {
