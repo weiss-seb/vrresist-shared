@@ -100,6 +100,7 @@ public class TCPServer : MonoBehaviour
         {
             InitializeTCPServer();
         }
+
     }
 
     /// <summary>
@@ -297,8 +298,16 @@ public class TCPServer : MonoBehaviour
     {
         if (connectedTcpClient != null && connectedTcpClient.Connected)
         {
+            if (connectedTcpClient.Client.RemoteEndPoint is IPEndPoint endpoint)
+            {
+                string clientIP = endpoint.Address.ToString();
+                Debug.LogWarning("[TCPServer] Providing connected client info.: " + clientIP);
+                return clientIP;
+            }
+            // Fallback for non-IP endpoints, though unlikely for TCP
             return connectedTcpClient.Client.RemoteEndPoint.ToString();
         }
+        Debug.LogWarning("[TCPServer] No client connected.");
         return "No client connected";
     }
 

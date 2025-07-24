@@ -287,7 +287,7 @@ namespace OVGU.VAR.VRResist
             // Set Chefarzt position
             if (eventTriggerSystem.head_doctor != null)
             {
-                eventTriggerSystem.head_doctor.transform.position = scenarioData.chefarztStartPosition;
+                eventTriggerSystem.head_doctor.transform.position = scenarioData.chefarztStartPosition.position;
                 if (enableDetailedLogging)
                     Debug.Log($"[ScenarioLoader] Set Chefarzt position to {scenarioData.chefarztStartPosition}");
             }
@@ -295,24 +295,24 @@ namespace OVGU.VAR.VRResist
             // Set Kollege position
             if (eventTriggerSystem.colleague != null)
             {
-                eventTriggerSystem.colleague.transform.position = scenarioData.kollegeStartPosition;
+                eventTriggerSystem.colleague.transform.position = scenarioData.kollegeStartPosition.position;
                 if (enableDetailedLogging)
-                    Debug.Log($"[ScenarioLoader] Set Kollege position to {scenarioData.kollegeStartPosition}");
+                    Debug.Log($"[ScenarioLoader] Set Kollege position to {scenarioData.kollegeStartPosition.position}");
             }
 
             // Set Patient position
             if (eventTriggerSystem.patient != null)
             {
-                eventTriggerSystem.patient.transform.position = scenarioData.patientStartPosition;
+                eventTriggerSystem.patient.transform.position = scenarioData.patientStartPosition.position;
                 if (enableDetailedLogging)
-                    Debug.Log($"[ScenarioLoader] Set Patient position to {scenarioData.patientStartPosition}");
+                    Debug.Log($"[ScenarioLoader] Set Patient position to {scenarioData.patientStartPosition.position}");
             }
 
             // Set participant (main camera) position
             Camera mainCamera = Camera.main;
             if (mainCamera != null)
             {
-                mainCamera.transform.position = scenarioData.participantStartPosition;
+                mainCamera.transform.position = scenarioData.participantStartPosition.transform.position;
                 if (enableDetailedLogging)
                     Debug.Log($"[ScenarioLoader] Set participant position to {scenarioData.participantStartPosition}");
             }

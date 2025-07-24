@@ -4,6 +4,7 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
 using System.Threading.Tasks.Sources;
+using UnityEngine.Events;
 
 
 namespace OVGU.VAR.VRResist
@@ -29,7 +30,7 @@ namespace OVGU.VAR.VRResist
         public TMP_Text debugText;
         [SerializeField] ScenarioSceneManager scenarioSceneManager;
 
-
+        public UnityEvent onMessageHandlerSetupComplete;
         TCPServer _tcpServer;
 
         [Header("XR Prefab")]
@@ -53,6 +54,8 @@ namespace OVGU.VAR.VRResist
                     Debug.LogError("[MessageHandler] ScenarioSceneManager not found in scene!");
                 }
             }
+
+            onMessageHandlerSetupComplete?.Invoke();
         }
 
         void OnEnable()
@@ -80,7 +83,17 @@ namespace OVGU.VAR.VRResist
                 scenarioSceneManager = FindObjectOfType<ScenarioSceneManager>();
             }
 
-            _tcpServer = GameObject.Find("TCPServer").GetComponent<TCPServer>();
+            _tcpServer = GameObject.Find("TCP_Server").GetComponent<TCPServer>();
+
+            xrPrefab = GameObject.Find("XR_origin_handtracking");
+            if (xrPrefab == null)
+            {
+                Debug.LogError("[MessageHandler] XR Prefab not found in scene!");
+            }
+
+            // Notify that setup is complete
+
+            Debug.Log("[MessageHandler] Message handler setup complete");
 
         }
 
@@ -468,16 +481,10 @@ namespace OVGU.VAR.VRResist
         /// </summary>
         private void HandleScenarioChange(EventMessage msg)
         {
-            if (msg.content.Length < 2)
-            {
-                Debug.LogError("[MessageHandler] SCENARIO_CHANGE requires 2 parameters: scenarioName, scenarioDataJson");
-                return;
-            }
 
-            string scenarioName = msg.content[0];
-            string scenarioID = msg.content[1];
+            int scenarioID = int.Parse(msg.content[0]);
 
-            Debug.Log($"[MessageHandler] Changing to scenario: {scenarioName}");
+            Debug.Log($"[MessageHandler] Changing to scenario: {scenarioID}");
 
             try
             {
@@ -490,8 +497,8 @@ namespace OVGU.VAR.VRResist
                 if (scenarioSceneManager != null)
                 {
                     // Use ScenarioSceneManager to load the appropriate scene
-                    scenarioSceneManager.LoadScenarioScene(int.Parse(scenarioID));
-                    Debug.Log($"[MessageHandler] Requested scene load for scenario: {scenarioName} (ID: {scenarioID})");
+                    scenarioSceneManager.LoadScenarioScene(scenarioID);
+                    Debug.Log($"[MessageHandler] Requested scene load for scenario ID: {scenarioID})");
                 }
                 else if (scenarioSceneManager == null)
                 {
