@@ -155,18 +155,19 @@ namespace OVGU.VAR.VRResist
             }
 
             // Load the scene asynchronously and additively
-            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneData.sceneName, LoadSceneMode.Additive);
+            AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneData.sceneName, LoadSceneMode.Single);
             asyncLoad.allowSceneActivation = false;
 
             //remove old scene if it exists, but not the first one
             if (SceneManager.sceneCount > 2)
             {
-                Scene oldScene = SceneManager.GetSceneAt(1); // Assuming the first scene is always the main scene
-                if (oldScene.isLoaded)
-                {
-                    Debug.Log($"[ScenarioSceneManager] Unloading old scene: {oldScene.name}");
-                    yield return SceneManager.UnloadSceneAsync(oldScene);
-                }
+                Scene oldScene = SceneManager.GetActiveScene();
+                string name = oldScene.name; // Assuming the first scene is always the main scene
+
+                Debug.Log($"[ScenarioSceneManager] Unloading old scene: {oldScene.name}");
+                yield return SceneManager.UnloadSceneAsync(name, UnloadSceneOptions.None);
+
+
             }
 
             // Update loading progress
