@@ -58,9 +58,6 @@ namespace OVGU.VAR.VRResist
         public GameObject patient, colleague, head_doctor;
         private NPC patientNPC, colleagueNPC, head_doctorNPC;
 
-        // Dynamic waypoint references - populated by ScenarioLoader
-        public GameObject[] availablePositions;
-
         // Legacy system variables - keeping for compatibility during transition
         private List<EventMessage> CurrentScenarioEventsList = new List<EventMessage>();
         private Coroutine eventCoroutine;
@@ -68,8 +65,6 @@ namespace OVGU.VAR.VRResist
 
         // Waypoint mapping for easy access
         private Dictionary<string, GameObject> waypoints = new Dictionary<string, GameObject>();
-
-
 
 
         // little wrapper for NPC controller scripts

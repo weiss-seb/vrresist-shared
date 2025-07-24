@@ -1,19 +1,18 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System;
 
 namespace OVGU.VAR.VRResist
 {
     /// <summary>
     /// Loads scenario data from ScriptableObject and applies it to scene components
     /// This component bridges the gap between persistent ScriptableObject data and scene-specific GameObjects
+    /// Furthermore, it is responsible for returning references to characters, waypoints, and cameras to the message system
     /// </summary>
     public class ScenarioLoader : MonoBehaviour
     {
         [Header("Scenario Configuration")]
         [SerializeField] private SO_ScenarioData scenarioData;
-
-        [Header("Target Components")]
-        [SerializeField] private EventTriggerSystem eventTriggerSystem;
 
         [Header("Debug Settings")]
         [SerializeField] private bool enableDetailedLogging = true;
@@ -61,8 +60,6 @@ namespace OVGU.VAR.VRResist
             // Apply scenario data to EventTriggerSystem
             ApplyToEventTriggerSystem();
 
-            // Set NPC starting positions
-            SetNPCStartingPositions();
 
             if (enableDetailedLogging)
                 Debug.Log($"[ScenarioLoader] Successfully loaded scenario: {scenarioData.scenarioName}");
@@ -150,28 +147,28 @@ namespace OVGU.VAR.VRResist
         {
             foundCameras.Clear();
 
-            if (scenarioData.cameraNames != null)
+            if (scenarioData.cameraTags != null)
             {
-                foreach (string cameraName in scenarioData.cameraNames)
+                foreach (string cameraTag in scenarioData.cameraTags)
                 {
-                    GameObject cameraObj = GameObject.Find(cameraName);
+                    GameObject cameraObj = GameObject.FindGameObjectWithTag(cameraTag);
                     if (cameraObj != null)
                     {
                         Camera camera = cameraObj.GetComponent<Camera>();
                         if (camera != null)
                         {
-                            foundCameras[cameraName.ToLower()] = camera;
+                            foundCameras[cameraTag.ToLower()] = camera;
                             if (enableDetailedLogging)
-                                Debug.Log($"[ScenarioLoader] Found camera: {cameraName}");
+                                Debug.Log($"[ScenarioLoader] Found camera: {cameraTag}");
                         }
                         else
                         {
-                            Debug.LogWarning($"[ScenarioLoader] GameObject {cameraName} found but has no Camera component");
+                            Debug.LogWarning($"[ScenarioLoader] GameObject {cameraTag} found but has no Camera component");
                         }
                     }
                     else
                     {
-                        Debug.LogWarning($"[ScenarioLoader] Camera not found: {cameraName}");
+                        Debug.LogWarning($"[ScenarioLoader] Camera not found: {cameraTag}");
                     }
                 }
             }
@@ -182,21 +179,11 @@ namespace OVGU.VAR.VRResist
         /// </summary>
         private void ApplyToEventTriggerSystem()
         {
-            if (eventTriggerSystem == null)
-            {
-                eventTriggerSystem = FindObjectOfType<EventTriggerSystem>();
-                if (eventTriggerSystem == null)
-                {
-                    Debug.LogWarning("[ScenarioLoader] EventTriggerSystem not found in scene!");
-                    return;
-                }
-            }
-
             // Apply character references
-            ApplyCharacterReferences();
+            GetCharacterReferences();
 
             // Apply waypoint references
-            ApplyWaypointReferences();
+            GetWaypointReferences();
 
             if (enableDetailedLogging)
                 Debug.Log("[ScenarioLoader] Applied scenario data to EventTriggerSystem");
@@ -206,117 +193,63 @@ namespace OVGU.VAR.VRResist
         /// Apply found character references to EventTriggerSystem
         /// Dynamic mapping based on characterNames array order
         /// </summary>
-        private void ApplyCharacterReferences()
+        private List<GameObject> GetCharacterReferences()
         {
             if (scenarioData.characterNames == null || scenarioData.characterNames.Length == 0)
             {
                 Debug.LogWarning("[ScenarioLoader] No character names configured in scenario data!");
-                return;
+                return null;
             }
 
-            // Map characters dynamically based on array order
-            // First character -> patient, Second -> colleague, Third -> head_doctor
+            List<GameObject> characters = new List<GameObject>();
             for (int i = 0; i < scenarioData.characterNames.Length && i < 3; i++)
             {
                 string characterName = scenarioData.characterNames[i].ToLower();
                 if (foundCharacters.ContainsKey(characterName))
                 {
-                    switch (i)
-                    {
-                        case 0:
-                            eventTriggerSystem.patient = foundCharacters[characterName];
-                            if (enableDetailedLogging)
-                                Debug.Log($"[ScenarioLoader] Mapped {scenarioData.characterNames[i]} to patient");
-                            break;
-                        case 1:
-                            eventTriggerSystem.colleague = foundCharacters[characterName];
-                            if (enableDetailedLogging)
-                                Debug.Log($"[ScenarioLoader] Mapped {scenarioData.characterNames[i]} to colleague");
-                            break;
-                        case 2:
-                            eventTriggerSystem.head_doctor = foundCharacters[characterName];
-                            if (enableDetailedLogging)
-                                Debug.Log($"[ScenarioLoader] Mapped {scenarioData.characterNames[i]} to head_doctor");
-                            break;
-                    }
+                    characters.Add(foundCharacters[characterName]);
+                    if (enableDetailedLogging)
+                        Debug.Log($"[ScenarioLoader] Mapped character: {scenarioData.characterNames[i]}");
                 }
                 else
                 {
                     Debug.LogWarning($"[ScenarioLoader] Character '{scenarioData.characterNames[i]}' not found in scene!");
                 }
-            }
 
-            // Warn if more than 3 characters are configured (EventTriggerSystem only supports 3)
-            if (scenarioData.characterNames.Length > 3)
-            {
-                Debug.LogWarning($"[ScenarioLoader] Scenario has {scenarioData.characterNames.Length} characters, but EventTriggerSystem only supports 3. Extra characters will be ignored.");
             }
+            return characters;
         }
 
         /// <summary>
         /// Apply found waypoint references to EventTriggerSystem
         /// Dynamic mapping based on availablePositions array
         /// </summary>
-        private void ApplyWaypointReferences()
+        private List<Transform> GetWaypointReferences()
         {
             if (scenarioData.availablePositions == null || scenarioData.availablePositions.Length == 0)
             {
                 Debug.LogWarning("[ScenarioLoader] No waypoint positions configured in scenario data!");
-                return;
+                return null;
             }
 
-            // Map waypoints dynamically based on common naming patterns
+            List<Transform> waypoints = new List<Transform>();
             foreach (string positionName in scenarioData.availablePositions)
             {
                 string key = positionName.ToLower();
                 if (foundWaypoints.ContainsKey(key))
                 {
-                    GameObject waypoint = foundWaypoints[key];
-
+                    waypoints.Add(foundWaypoints[key].transform);
                     if (enableDetailedLogging)
-                        Debug.Log($"[ScenarioLoader] Processed waypoint: {positionName}");
+                        Debug.Log($"[ScenarioLoader] Mapped waypoint: {positionName}");
+                }
+                else
+                {
+                    Debug.LogWarning($"[ScenarioLoader] Waypoint '{positionName}' not found in scene!");
                 }
             }
+            return waypoints;
         }
 
-        /// <summary>
-        /// Set NPC starting positions based on scenario data
-        /// </summary>
-        private void SetNPCStartingPositions()
-        {
-            // Set Chefarzt position
-            if (eventTriggerSystem.head_doctor != null)
-            {
-                eventTriggerSystem.head_doctor.transform.position = scenarioData.chefarztStartPosition.position;
-                if (enableDetailedLogging)
-                    Debug.Log($"[ScenarioLoader] Set Chefarzt position to {scenarioData.chefarztStartPosition}");
-            }
-
-            // Set Kollege position
-            if (eventTriggerSystem.colleague != null)
-            {
-                eventTriggerSystem.colleague.transform.position = scenarioData.kollegeStartPosition.position;
-                if (enableDetailedLogging)
-                    Debug.Log($"[ScenarioLoader] Set Kollege position to {scenarioData.kollegeStartPosition.position}");
-            }
-
-            // Set Patient position
-            if (eventTriggerSystem.patient != null)
-            {
-                eventTriggerSystem.patient.transform.position = scenarioData.patientStartPosition.position;
-                if (enableDetailedLogging)
-                    Debug.Log($"[ScenarioLoader] Set Patient position to {scenarioData.patientStartPosition.position}");
-            }
-
-            // Set participant (main camera) position
-            Camera mainCamera = Camera.main;
-            if (mainCamera != null)
-            {
-                mainCamera.transform.position = scenarioData.participantStartPosition.transform.position;
-                if (enableDetailedLogging)
-                    Debug.Log($"[ScenarioLoader] Set participant position to {scenarioData.participantStartPosition}");
-            }
-        }
 
         /// <summary>
         /// Get a character GameObject by name (for external access)

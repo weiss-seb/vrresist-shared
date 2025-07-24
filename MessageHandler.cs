@@ -1,9 +1,6 @@
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
-using System.Threading.Tasks.Sources;
 using UnityEngine.Events;
 
 
@@ -22,6 +19,7 @@ namespace OVGU.VAR.VRResist
         [Header("System References")]
         public EventTriggerSystem eventTriggerSystem;
         public StudyTaskManager taskManager;
+        [SerializeField] ScenarioLoader scenarioLoader;
 
         [SerializeField] MathTaskManager mathTaskManager;
         [SerializeField] NBackTask nBackTaskManager;
@@ -166,6 +164,7 @@ namespace OVGU.VAR.VRResist
                    messageType == "CAMERA_CHANGE" ||
                    messageType == "ABORT_ALL" ||
                    messageType == "END_STUDY" ||
+                   messageType == "REQUEST_STUDY_SETUP" ||
                    messageType == "SCENARIO_CHANGE";
         }
 
@@ -219,6 +218,10 @@ namespace OVGU.VAR.VRResist
 
                 case "SCENARIO_CHANGE":
                     HandleScenarioChange(msg);
+                    break;
+
+                case "REQUEST_STUDY_SETUP":
+                    HandleStudySetupRequest(msg);
                     break;
 
                 default:
@@ -513,6 +516,127 @@ namespace OVGU.VAR.VRResist
             {
                 Debug.LogError($"[MessageHandler] Error processing scenario change: {e.Message}");
             }
+        }
+
+        /// <summary>
+        /// Handle study setup request - sends current scenario data to tablet
+        /// </summary>
+        private void HandleStudySetupRequest(EventMessage msg)
+        {
+            Debug.Log("[MessageHandler] Handling study setup request");
+
+            if (scenarioLoader == null)
+            {
+                Debug.LogError("[MessageHandler] ScenarioLoader not assigned!");
+                return;
+            }
+
+            SO_ScenarioData scenarioData = scenarioLoader.GetScenarioData();
+            if (scenarioData == null)
+            {
+                Debug.LogError("[MessageHandler] No scenario data available!");
+                return;
+            }
+
+            try
+            {
+                // Build the study setup response data
+                string studySetupData = BuildStudySetupData(scenarioData);
+
+                // Create response message
+                EventMessage response = new EventMessage("STUDY_SETUP_RESPONSE", new string[] { studySetupData });
+
+                // Send response to tablet
+                SendEventMessageToClient(response);
+
+                Debug.Log("[MessageHandler] Study setup response sent successfully");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[MessageHandler] Error building study setup response: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Build JSON data for study setup response
+        /// </summary>
+        private string BuildStudySetupData(SO_ScenarioData scenarioData)
+        {
+            var npcDataList = new System.Collections.Generic.List<System.Object>();
+
+            // Get all NPCs from scenario data
+            if (scenarioData.characterNames != null)
+            {
+                foreach (string characterName in scenarioData.characterNames)
+                {
+                    GameObject npcObject = scenarioLoader.GetCharacter(characterName);
+                    if (npcObject != null)
+                    {
+                        NPCController npcController = npcObject.GetComponent<NPCController>();
+                        if (npcController != null)
+                        {
+                            // Get audio data from NPC controller
+                            var (clipNames, labels) = npcController.GetAudioData();
+
+                            // Build audio files array
+                            var audioFiles = new System.Collections.Generic.List<System.Object>();
+                            for (int i = 0; i < clipNames.Length; i++)
+                            {
+                                audioFiles.Add(new
+                                {
+                                    clipName = clipNames[i],
+                                    label = i < labels.Length ? labels[i] : clipNames[i]
+                                });
+                            }
+
+                            // Create NPC data object
+                            var npcData = new
+                            {
+                                name = characterName.ToLower(),
+                                displayName = CapitalizeFirstLetter(characterName),
+                                audioFiles = audioFiles.ToArray()
+                            };
+
+                            npcDataList.Add(npcData);
+
+                            if (enableDetailedLogging)
+                                Debug.Log($"[MessageHandler] Added NPC data for: {characterName} with {clipNames.Length} audio clips");
+                        }
+                        else
+                        {
+                            Debug.LogWarning($"[MessageHandler] NPC {characterName} has no NPCController component!");
+                        }
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[MessageHandler] NPC {characterName} not found in scene!");
+                    }
+                }
+            }
+
+            // Get available positions
+            string[] positions = scenarioData.availablePositions ?? new string[0];
+
+            // Create the complete response object
+            var responseData = new
+            {
+                npcs = npcDataList.ToArray(),
+                positions = positions
+            };
+
+            // Convert to JSON string
+            return JsonUtility.ToJson(responseData);
+        }
+
+        /// <summary>
+        /// Helper method to capitalize first letter of a string
+        /// </summary>
+        private string CapitalizeFirstLetter(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            return char.ToUpper(input[0]) + input.Substring(1).ToLower();
         }
 
         /// <summary>
