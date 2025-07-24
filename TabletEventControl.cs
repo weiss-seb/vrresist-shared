@@ -82,18 +82,12 @@ namespace OVGU.VAR.VRResist
         /// <summary>
         /// Setup scenario dropdown and subscribe to scenario changes
         /// </summary>
-        public void SetupScenarioDropdown(string jSonMessage)
+        public void SetupScenarioDropdown(EventMessage message)
         {
-            Debug.Log(jSonMessage);
-            EventMessage e = JsonUtility.FromJson<EventMessage>(jSonMessage);
 
             //get the scenario list from the event message
 
-            PopulateScenarioDropdown(e.content);
-
-
-            // Setup dropdown change listener
-            scenarioDropdown.onValueChanged.AddListener(OnScenarioDropdownChanged);
+            PopulateScenarioDropdown(message.content);
 
             // Load initial scenario
 
@@ -135,20 +129,13 @@ namespace OVGU.VAR.VRResist
                 Debug.Log($"[TabletEventControl] Populated dropdown with {options.Count} scenarios");
         }
 
-        /// <summary>
-        /// Handle scenario dropdown value change
-        /// </summary>
-        void OnScenarioDropdownChanged(int scenarioIndex)
-        {
-
-        }
 
         public void StartSelectedScenario()
         {
             //Send a message to HMD to load up the selected scenario
             if (webSocketClient != null)
             {
-                var message = new EventMessage("startScenario", new string[] { scenarioDropdown.value.ToString() });
+                var message = new EventMessage("SCENARIO_CHANGE", new string[] { (scenarioDropdown.value + 1).ToString() });
                 webSocketClient.SendEventMessage(message);
                 Debug.Log($"[TabletEventControl] Starting scenario:");
             }
@@ -213,7 +200,6 @@ namespace OVGU.VAR.VRResist
             // Re-setup all buttons with new scenario data
             SetupNPCActionButtons();
             SetupTaskActionButtons();
-            SetupCameraActionButtons();
             SetupStudyControlButtons();
         }
 
@@ -283,7 +269,6 @@ namespace OVGU.VAR.VRResist
 
             SetupNPCActionButtons();
             SetupTaskActionButtons();
-            SetupCameraActionButtons();
             SetupStudyControlButtons();
 
             Debug.Log("[TabletEventControl] Pre-configured UI setup complete!");
@@ -357,33 +342,6 @@ namespace OVGU.VAR.VRResist
         }
 
         /// <summary>
-        /// Setup camera control buttons
-        /// </summary>
-        void SetupCameraActionButtons()
-        {
-            if (cameraButtons == null) return;
-
-            for (int i = 0; i < cameraButtons.Length; i++)
-            {
-                if (cameraButtons[i] != null)
-                {
-                    int cameraIndex = i; // Capture for closure
-                    cameraButtons[i].onClick.AddListener(() => SendCameraCommand(cameraIndex));
-
-                    // Update button text
-                    var buttonText = cameraButtons[i].GetComponentInChildren<TMPro.TextMeshProUGUI>();
-                    if (buttonText != null)
-                    {
-                        buttonText.text = $"Kamera {cameraIndex + 1}";
-                    }
-
-                    if (enableDetailedLogging)
-                        Debug.Log($"[TabletEventControl] Setup camera button: Camera {cameraIndex + 1}");
-                }
-            }
-        }
-
-        /// <summary>
         /// Setup study control buttons
         /// </summary>
         void SetupStudyControlButtons()
@@ -446,11 +404,24 @@ namespace OVGU.VAR.VRResist
         /// <summary>
         /// Send camera change command to HMD
         /// </summary>
-        void SendCameraCommand(int cameraIndex)
+        public void SendCameraCommand(int cameraIndex)
         {
             var message = new EventMessage("changeCamera", new string[] { cameraIndex.ToString() });
             SendMessageToHMD(message);
             Debug.Log($"[TabletEventControl] Sent changeCamera to index: {cameraIndex}");
+        }
+
+        void SendCameraStreamRequest()
+        {
+            if (webSocketClient != null)
+            {
+                webSocketClient.SendCameraRequest();
+                Debug.Log("[TabletEventControl] Requested camera stream from HMD");
+            }
+            else
+            {
+                Debug.LogWarning("[TabletEventControl] WebSocketClient is null, cannot request camera stream!");
+            }
         }
 
         /// <summary>
@@ -498,8 +469,10 @@ namespace OVGU.VAR.VRResist
         /// <summary>
         /// Handle incoming messages from HMD (if needed for tablet display updates)
         /// </summary>
-        public void OnMessageReceived(EventMessage message)
+        public void OnMessageReceived(string msg)
         {
+            EventMessage message = JsonUtility.FromJson<EventMessage>(msg);
+
             if (enableDetailedLogging)
                 Debug.Log($"[TabletEventControl] Received message: {message.type}");
 
@@ -514,10 +487,15 @@ namespace OVGU.VAR.VRResist
                 case "audioClipsListPatient":
                     // Update patient audio clips if needed
                     break;
+                case "scenarioUpdate":
+                    break;
                 case "scenarioList":
-                    // Update task display if this tablet also shows tasks
-                    PopulateScenarioDropdown(message.content);
-
+                    Debug.Log("[TabletEventControl] Received scenario list update");
+                    SetupScenarioDropdown(message);
+                    break;
+                case "SCENE_LOAED":
+                    SendCameraStreamRequest();
+                    Debug.Log("[TabletEventControl] Scene loaded, requesting camera stream");
                     break;
                 default:
                     // Handle other message types as needed
