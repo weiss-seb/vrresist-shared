@@ -19,6 +19,7 @@ public class WebSocketClient : MonoBehaviour
     private Thread clientReceiveThread;
     private bool isConnected = false;
 
+
     private readonly Queue<string> messageQueue = new Queue<string>();
 
     public UnityEvent<string> OnMessageReceive;
@@ -154,9 +155,6 @@ public class WebSocketClient : MonoBehaviour
         EventMessage refreshMsg = new EventMessage("request", new string[] { "refresh" });
         SendEventMessage(refreshMsg);
 
-        string webcamIp = GetLocalIp();
-        EventMessage ipMsg = new EventMessage("webcamIp", new string[] { webcamIp });
-        SendEventMessage(ipMsg);
     }
 
     public void SendChatMessage(string message)
@@ -164,6 +162,13 @@ public class WebSocketClient : MonoBehaviour
         Debug.Log("[WSClient] Preparing chat message: " + message);
         EventMessage msg = new EventMessage("chat", new string[] { message });
         SendEventMessage(msg);
+    }
+
+    public void SendCameraRequest()
+    {
+        string webcamIp = GetLocalIp();
+        EventMessage ipMsg = new EventMessage("webcamIp", new string[] { webcamIp });
+        SendEventMessage(ipMsg);
     }
 
 
