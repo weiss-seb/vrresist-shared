@@ -30,7 +30,7 @@ namespace OVGU.VAR.VRResist
         public TMP_Text debugText;
         [SerializeField] ScenarioSceneManager scenarioSceneManager;
 
-        public UnityEvent onMessageHandlerSetupComplete;
+
         TCPServer _tcpServer;
 
         [Header("XR Prefab")]
@@ -55,8 +55,6 @@ namespace OVGU.VAR.VRResist
                     Debug.LogError("[MessageHandler] ScenarioSceneManager not found in scene!");
                 }
             }
-
-            onMessageHandlerSetupComplete?.Invoke();
         }
 
         void OnEnable()
@@ -588,9 +586,9 @@ namespace OVGU.VAR.VRResist
                 }
 
                 // Send available audio clips for each NPC
-                SendEventMessageToClient(new EventMessage("audioClipsListChefarzt", GetAudioClipsForCharacter(chefarzt)));
-                SendEventMessageToClient(new EventMessage("audioClipsListKollege", GetAudioClipsForCharacter(kollege)));
-                SendEventMessageToClient(new EventMessage("audioClipsListPatient", GetAudioClipsForCharacter(patient)));
+                // SendEventMessageToClient(new EventMessage("audioClipsListChefarzt", GetAudioClipsForCharacter(chefarzt)));
+                // SendEventMessageToClient(new EventMessage("audioClipsListKollege", GetAudioClipsForCharacter(kollege)));
+                // SendEventMessageToClient(new EventMessage("audioClipsListPatient", GetAudioClipsForCharacter(patient)));
 
             }
         }

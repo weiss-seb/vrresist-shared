@@ -47,12 +47,20 @@ public class CameraControl : MonoBehaviour
     {
 
         Debug.Log("[CameraControl] Current Camera Index: " + cameraIndex);
-        currentCameraId = cameraIndex;
+        currentCameraId += cameraIndex;
 
         // set position of camera according to cameraIndex
+        if (currentCameraId < 0)
+        {
+            currentCameraId = camPositions.Count - 1;
+        }
+        else if (currentCameraId >= camPositions.Count)
+        {
+            currentCameraId = 0;
+        }
         try
         {
-            camera.transform.SetPositionAndRotation(camPositions[cameraIndex].transform.position, camPositions[cameraIndex].rotation);
+            camera.transform.SetPositionAndRotation(camPositions[currentCameraId].transform.position, camPositions[currentCameraId].rotation);
         }
         catch
         {
