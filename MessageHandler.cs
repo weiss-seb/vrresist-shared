@@ -2,6 +2,8 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
 using UnityEngine.Events;
+using UnityEngine.Purchasing.MiniJSON;
+using System.Collections.Generic;
 
 
 namespace OVGU.VAR.VRResist
@@ -36,6 +38,7 @@ namespace OVGU.VAR.VRResist
 
         [Header("Debug Settings")]
         [SerializeField] bool enableDetailedLogging = true;
+
 
         #endregion
         #region LifeCycle
@@ -319,7 +322,7 @@ namespace OVGU.VAR.VRResist
                 return;
             }
 
-            string npcName = StandardizeNPCName(msg.content[0]);
+            string npcName = msg.content[0];
             string positionName = msg.content[1];
 
             Debug.Log($"[MessageHandler] Moving {npcName} to {positionName}");
@@ -348,7 +351,7 @@ namespace OVGU.VAR.VRResist
                 return;
             }
 
-            string npcName = StandardizeNPCName(msg.content[0]);
+            string npcName = msg.content[0];
             string audioClipName = msg.content[1];
 
             Debug.Log($"[MessageHandler] {npcName} speaking: {audioClipName}");
@@ -531,18 +534,11 @@ namespace OVGU.VAR.VRResist
                 return;
             }
 
-            SO_ScenarioData scenarioData = scenarioLoader.GetScenarioData();
-            if (scenarioData == null)
-            {
-                Debug.LogError("[MessageHandler] No scenario data available!");
-                return;
-            }
-
             try
             {
                 // Build the study setup response data
-                string studySetupData = BuildStudySetupData(scenarioData);
-
+                string studySetupData = scenarioLoader.BuildStudySetupData();
+                Debug.Log("[MessageHandler] Study setup json = " + studySetupData);
                 // Create response message
                 EventMessage response = new EventMessage("STUDY_SETUP_RESPONSE", new string[] { studySetupData });
 
@@ -557,87 +553,8 @@ namespace OVGU.VAR.VRResist
             }
         }
 
-        /// <summary>
-        /// Build JSON data for study setup response
-        /// </summary>
-        private string BuildStudySetupData(SO_ScenarioData scenarioData)
-        {
-            var npcDataList = new System.Collections.Generic.List<System.Object>();
 
-            // Get all NPCs from scenario data
-            if (scenarioData.characterNames != null)
-            {
-                foreach (string characterName in scenarioData.characterNames)
-                {
-                    GameObject npcObject = scenarioLoader.GetCharacter(characterName);
-                    if (npcObject != null)
-                    {
-                        NPCController npcController = npcObject.GetComponent<NPCController>();
-                        if (npcController != null)
-                        {
-                            // Get audio data from NPC controller
-                            var (clipNames, labels) = npcController.GetAudioData();
 
-                            // Build audio files array
-                            var audioFiles = new System.Collections.Generic.List<System.Object>();
-                            for (int i = 0; i < clipNames.Length; i++)
-                            {
-                                audioFiles.Add(new
-                                {
-                                    clipName = clipNames[i],
-                                    label = i < labels.Length ? labels[i] : clipNames[i]
-                                });
-                            }
-
-                            // Create NPC data object
-                            var npcData = new
-                            {
-                                name = characterName.ToLower(),
-                                displayName = CapitalizeFirstLetter(characterName),
-                                audioFiles = audioFiles.ToArray()
-                            };
-
-                            npcDataList.Add(npcData);
-
-                            if (enableDetailedLogging)
-                                Debug.Log($"[MessageHandler] Added NPC data for: {characterName} with {clipNames.Length} audio clips");
-                        }
-                        else
-                        {
-                            Debug.LogWarning($"[MessageHandler] NPC {characterName} has no NPCController component!");
-                        }
-                    }
-                    else
-                    {
-                        Debug.LogWarning($"[MessageHandler] NPC {characterName} not found in scene!");
-                    }
-                }
-            }
-
-            // Get available positions
-            string[] positions = scenarioData.availablePositions ?? new string[0];
-
-            // Create the complete response object
-            var responseData = new
-            {
-                npcs = npcDataList.ToArray(),
-                positions = positions
-            };
-
-            // Convert to JSON string
-            return JsonUtility.ToJson(responseData);
-        }
-
-        /// <summary>
-        /// Helper method to capitalize first letter of a string
-        /// </summary>
-        private string CapitalizeFirstLetter(string input)
-        {
-            if (string.IsNullOrEmpty(input))
-                return input;
-
-            return char.ToUpper(input[0]) + input.Substring(1).ToLower();
-        }
 
         /// <summary>
         /// Move NPC to starting position for scenario
@@ -653,8 +570,6 @@ namespace OVGU.VAR.VRResist
         }
 
         #endregion
-
-        #region System Message Handlers
 
         /// <summary>
         /// Handle refresh requests from remote tablet
@@ -691,50 +606,6 @@ namespace OVGU.VAR.VRResist
             }
         }
 
-        #endregion
-
-        #region Helper Methods
-
-        /// <summary>
-        /// Standardize NPC names to ensure consistency
-        /// </summary>
-        private string StandardizeNPCName(string inputName)
-        {
-            if (string.IsNullOrEmpty(inputName)) return "";
-
-            string name = inputName.ToLower().Trim();
-            switch (name)
-            {
-                case "chefarzt":
-                case "chef":
-                case "arzt":
-                case "dr":
-                    return "chefarzt";
-
-                case "kollege":
-                case "colleague":
-                case "mitarbeiter":
-                    return "kollege";
-
-                case "patient":
-                case "kranker":
-                case "person":
-                    return "patient";
-
-                case "doctor":
-                    return "doctor";
-
-                case "anesthesiologist":
-                case "anaesthesist":
-                case "narkosearzt":
-                    return "anesthesiologist";
-
-                default:
-                    Debug.LogWarning($"[MessageHandler] Unknown NPC name: {inputName}, using as-is");
-                    return inputName.ToLower();
-            }
-        }
-
         /// <summary>
         /// Get NPC GameObject by standardized name
         /// </summary>
@@ -748,29 +619,6 @@ namespace OVGU.VAR.VRResist
                 default: return null;
             }
         }
-
-        /// <summary>
-        /// Stop all NPC activities
-        /// </summary>
-        private void StopAllNPCs()
-        {
-            GameObject[] npcs = { chefarzt, kollege, patient };
-
-            foreach (var npc in npcs)
-            {
-                if (npc != null)
-                {
-                    var locomotion = npc.GetComponent<NPCLocomotion>();
-                    var controller = npc.GetComponent<NPCController>();
-
-                    if (locomotion != null) locomotion.stopWalking();
-                    if (controller != null) controller.stopSpeaking();
-                }
-            }
-        }
-
-
-        #endregion
 
         /// <summary>
         ///  // Convert the message to JSON and send it via TCP

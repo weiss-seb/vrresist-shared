@@ -1,3 +1,4 @@
+
 using UnityEngine;
 using System.Collections.Generic;
 using System;
@@ -21,6 +22,31 @@ namespace OVGU.VAR.VRResist
         private Dictionary<string, GameObject> foundCharacters = new Dictionary<string, GameObject>();
         private Dictionary<string, GameObject> foundWaypoints = new Dictionary<string, GameObject>();
         private Dictionary<string, Camera> foundCameras = new Dictionary<string, Camera>();
+
+
+
+        [System.Serializable]
+        public class StudySetupResponse
+        {
+            public NPCData[] npcs;
+            public string[] positions;
+        }
+
+        [System.Serializable]
+        public class NPCData
+        {
+            public string name;
+            public string displayName;
+            public AudioFileData[] audioFiles;
+        }
+
+        [System.Serializable]
+        public class AudioFileData
+        {
+            public string clipName;
+            public string label;
+        }
+
 
         void Start()
         {
@@ -175,6 +201,79 @@ namespace OVGU.VAR.VRResist
         }
 
         /// <summary>
+        /// Build JSON data for study setup response
+        /// </summary>
+        internal string BuildStudySetupData()
+        {
+            Debug.Log("[MessageHandler] Building study setup data");
+
+            var npcDataList = new List<NPCData>();
+            // Get all NPCs from scenario data
+            if (scenarioData.characterNames != null)
+            {
+                Debug.Log($"[MessageHandler] Found {scenarioData.characterNames.Length} characters in scenario data");
+                foreach (string characterName in scenarioData.characterNames)
+                {
+                    Debug.Log($"[MessageHandler] Processing character: {characterName}");
+                    GameObject npcObject = GetCharacter(characterName);
+                    if (npcObject != null)
+                    {
+                        Debug.Log($"[MessageHandler] Found NPC object for: {characterName}");
+
+                        // Get audio data from NPC controller
+                        var (clipNames, labels) = scenarioData.GetAudioDataForNPC(characterName);
+                        //Get audio data and labels from scenario data
+
+                        Debug.Log($"[MessageHandler] {characterName} has {clipNames.Length} audio clips");
+                        // Build audio files array
+                        var audioFiles = new List<AudioFileData>();
+                        for (int i = 0; i < clipNames.Length; i++)
+                        {
+                            audioFiles.Add(new AudioFileData
+                            {
+                                clipName = clipNames[i],
+                                label = i < labels.Length ? labels[i] : clipNames[i]
+                            });
+                        }
+
+                        // Create NPC data object
+                        var npcData = new NPCData
+                        {
+                            name = characterName.ToLower(),
+                            displayName = CapitalizeFirstLetter(characterName),
+                            audioFiles = audioFiles.ToArray()
+                        };
+
+                        npcDataList.Add(npcData);
+
+                        if (enableDetailedLogging)
+                            Debug.Log($"[MessageHandler] Added NPC data for: {characterName} with {clipNames.Length} audio clips");
+
+                    }
+                    else
+                    {
+                        Debug.LogWarning($"[MessageHandler] NPC {characterName} not found in scene!");
+                    }
+                }
+            }
+
+            // Get available positions
+            string[] positions = scenarioData.availablePositions ?? new string[0];
+
+            // Create the complete response object
+            var responseData = new StudySetupResponse
+            {
+                npcs = npcDataList.ToArray(),
+                positions = scenarioData.availablePositions ?? new string[0]
+            };
+
+            // Convert to JSON string
+            return JsonUtility.ToJson(responseData);
+        }
+
+
+
+        /// <summary>
         /// Apply scenario data to EventTriggerSystem
         /// </summary>
         private void ApplyToEventTriggerSystem()
@@ -321,6 +420,17 @@ namespace OVGU.VAR.VRResist
             {
                 Debug.Log($"  - {kvp.Key}: {kvp.Value.name}");
             }
+        }
+
+        /// <summary>
+        /// Helper method to capitalize first letter of a string
+        /// </summary>
+        private string CapitalizeFirstLetter(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
+
+            return char.ToUpper(input[0]) + input.Substring(1).ToLower();
         }
     }
 }
