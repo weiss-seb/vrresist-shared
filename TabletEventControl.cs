@@ -28,16 +28,6 @@ namespace OVGU.VAR.VRResist
         [SerializeField] GameObject cameraActionsPanel;
         [SerializeField] GameObject studyControlPanel;
 
-        [Header("NPC Action Buttons - Assign in Unity Editor")]
-        [Tooltip("NPC Movement Buttons")]
-        [SerializeField] Button[] chefarztWalkButtons;
-        [SerializeField] Button[] kollegeWalkButtons;
-        [SerializeField] Button[] patientWalkButtons;
-
-        [Tooltip("NPC Speech Buttons - Configure with predefined audio clip names")]
-        [SerializeField] Button[] chefarztTalkButtons;
-        [SerializeField] Button[] kollegeTalkButtons;
-        [SerializeField] Button[] patientTalkButtons;
 
         [Header("Task Action Buttons - Assign in Unity Editor")]
         [SerializeField] Button showMathTaskButton;
@@ -52,17 +42,6 @@ namespace OVGU.VAR.VRResist
         [SerializeField] Button abortAllButton;
         [SerializeField] Button endStudyButton;
         [SerializeField] Button refreshButton;
-
-
-
-        [Header("Dynamic Audio Configuration")]
-        [Tooltip("Audio clips and labels are loaded dynamically from ScenarioManager")]
-        [SerializeField] string[] chefarztAudioClips = new string[0];
-        [SerializeField] string[] kollegeAudioClips = new string[0];
-        [SerializeField] string[] patientAudioClips = new string[0];
-        [SerializeField] string[] chefarztAudioLabels = new string[0];
-        [SerializeField] string[] kollegeAudioLabels = new string[0];
-        [SerializeField] string[] patientAudioLabels = new string[0];
 
         [Header("Dynamic UI Generation")]
         [Tooltip("Button prefab for dynamically created audio buttons")]
@@ -83,14 +62,7 @@ namespace OVGU.VAR.VRResist
 
         void Start()
         {
-            // Setup scenario dropdown
-            //SetupScenarioDropdown();
 
-            // Setup pre-configured UI button listeners
-            // SetupPreConfiguredUI();
-
-            // Request initial data from HMD
-            // RequestInitialData();
         }
 
         /// <summary>
@@ -161,49 +133,6 @@ namespace OVGU.VAR.VRResist
         }
 
         /// <summary>
-        /// Update UI elements based on current scenario
-        /// </summary>
-        void UpdateUIForScenario(SO_ScenarioData scenario)
-        {
-            //todo add back buttons for NPC walk positions
-
-            // Update audio clips and labels for each NPC
-            UpdateNPCAudioData("chefarzt", scenario.GetAudioClipsForNPC("chefarzt"), scenario.GetAudioLabelsForNPC("chefarzt"));
-            UpdateNPCAudioData("kollege", scenario.GetAudioClipsForNPC("kollege"), scenario.GetAudioLabelsForNPC("kollege"));
-            UpdateNPCAudioData("patient", scenario.GetAudioClipsForNPC("patient"), scenario.GetAudioLabelsForNPC("patient"));
-
-            // Refresh button configurations
-            RefreshButtonConfigurations();
-
-            if (enableDetailedLogging)
-                Debug.Log($"[TabletEventControl] UI updated for scenario: {scenario.scenarioName}");
-        }
-
-        /// <summary>
-        /// Update NPC audio data for scenario
-        /// </summary>
-        void UpdateNPCAudioData(string npcName, string[] audioClips, string[] audioLabels)
-        {
-            if (audioClips == null || audioClips.Length == 0) return;
-
-            switch (npcName.ToLower())
-            {
-                case "chefarzt":
-                    chefarztAudioClips = audioClips;
-                    chefarztAudioLabels = audioLabels ?? audioClips;
-                    break;
-                case "kollege":
-                    kollegeAudioClips = audioClips;
-                    kollegeAudioLabels = audioLabels ?? audioClips;
-                    break;
-                case "patient":
-                    patientAudioClips = audioClips;
-                    patientAudioLabels = audioLabels ?? audioClips;
-                    break;
-            }
-        }
-
-        /// <summary>
         /// Refresh all button configurations after scenario change
         /// </summary>
         void RefreshButtonConfigurations()
@@ -212,7 +141,7 @@ namespace OVGU.VAR.VRResist
             ClearButtonListeners();
 
             // Re-setup all buttons with new scenario data
-            SetupNPCActionButtons();
+
             SetupTaskActionButtons();
             SetupStudyControlButtons();
         }
@@ -222,15 +151,6 @@ namespace OVGU.VAR.VRResist
         /// </summary>
         void ClearButtonListeners()
         {
-            // Clear walk button listeners
-            ClearButtonArrayListeners(chefarztWalkButtons);
-            ClearButtonArrayListeners(kollegeWalkButtons);
-            ClearButtonArrayListeners(patientWalkButtons);
-
-            // Clear talk button listeners
-            ClearButtonArrayListeners(chefarztTalkButtons);
-            ClearButtonArrayListeners(kollegeTalkButtons);
-            ClearButtonArrayListeners(patientTalkButtons);
 
             // Clear other button listeners
             ClearButtonArrayListeners(cameraButtons);
@@ -281,25 +201,11 @@ namespace OVGU.VAR.VRResist
         {
             Debug.Log("[TabletEventControl] Setting up pre-configured UI button listeners...");
 
-            SetupNPCActionButtons();
             SetupTaskActionButtons();
             SetupStudyControlButtons();
 
             Debug.Log("[TabletEventControl] Pre-configured UI setup complete!");
         }
-
-        /// <summary>
-        /// Setup NPC action buttons - assigns listeners to pre-configured buttons
-        /// </summary>
-        void SetupNPCActionButtons()
-        {
-
-            // Setup talk buttons for each NPC
-            SetupTalkButtons(chefarztTalkButtons, "chefarzt", chefarztAudioClips, chefarztAudioLabels);
-            SetupTalkButtons(kollegeTalkButtons, "kollege", kollegeAudioClips, kollegeAudioLabels);
-            SetupTalkButtons(patientTalkButtons, "patient", patientAudioClips, patientAudioLabels);
-        }
-
 
 
         /// <summary>
@@ -520,27 +426,6 @@ namespace OVGU.VAR.VRResist
                     // Handle other message types as needed
                     break;
             }
-        }
-
-        /// <summary>
-        /// Update audio clip arrays from HMD data (if dynamic updates are needed)
-        /// </summary>
-        public void UpdateAudioClips(string npcName, string[] audioClips)
-        {
-            switch (npcName.ToLower())
-            {
-                case "chefarzt":
-                    chefarztAudioClips = audioClips;
-                    break;
-                case "kollege":
-                    kollegeAudioClips = audioClips;
-                    break;
-                case "patient":
-                    patientAudioClips = audioClips;
-                    break;
-            }
-
-            Debug.Log($"[TabletEventControl] Updated audio clips for {npcName}: {audioClips.Length} clips");
         }
 
         /// <summary>
