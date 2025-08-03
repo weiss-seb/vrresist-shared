@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine.Events;
 using System;
 using System.Collections.Generic;
+using UnityEngine.UI;
 
 namespace OVGU.VAR.VRResist
 {
@@ -20,6 +21,7 @@ namespace OVGU.VAR.VRResist
         [Header("Loading UI")]
         [SerializeField] GameObject loadingScreen;
         [SerializeField] TMP_Text loadingText;
+        [SerializeField] Slider loadingProgressSlider;
         [SerializeField] TMP_Text scenarioInfoText;
 
         [Header("Network")]
@@ -85,7 +87,7 @@ namespace OVGU.VAR.VRResist
             sceneData.scenarioName = $"Scenario {scenarioId + 1}";
             sceneData.sceneName = $"Scenario{scenarioId + 1}Scene";
             sceneData.loadingMessage = $"Lade Scenario {scenarioId + 1}...";
-            sceneData.scenarioInfoText = $"Sie befinden sich in Scenario {scenarioId + 1}.\nBitte folgen Sie den Anweisungen des Studienleiters.";
+            sceneData.scenarioInfoTexts[0] = $"Sie befinden sich in Scenario {scenarioId + 1}.\nBitte folgen Sie den Anweisungen des Studienleiters.";
             return sceneData;
         }
 
@@ -94,11 +96,7 @@ namespace OVGU.VAR.VRResist
         /// </summary>
         public void LoadScenarioScene(int scenarioId)
         {
-            string infoText = scenarioScenes[scenarioId - 1].scenarioInfoText;
-            if (string.IsNullOrEmpty(infoText))
-            {
-                infoText = "Keine Informationen für dieses Szenario verfügbar.";
-            }
+
             if (isLoading)
             {
                 Debug.LogWarning("[ScenarioSceneManager] Already loading a scene, ignoring request");
@@ -121,7 +119,25 @@ namespace OVGU.VAR.VRResist
             // Use provided info text or fall back to configured text
 
 
-            StartCoroutine(LoadSceneCoroutine(sceneData, infoText));
+            StartCoroutine(LoadSceneCoroutine(sceneData, GetScenarioHelpText(scenarioId)));
+        }
+
+        public string GetScenarioHelpText(int scenarioId)
+        {
+            if (scenarioId < 0 || scenarioId >= scenarioScenes.Length)
+            {
+                Debug.LogError($"[ScenarioSceneManager] Invalid scenario ID: {scenarioId}");
+                return "Keine Informationen für dieses Szenario verfügbar.";
+            }
+
+            var sceneData = scenarioScenes[scenarioId];
+            if (sceneData == null)
+            {
+                Debug.LogError($"[ScenarioSceneManager] Scene data for scenario {scenarioId} is null");
+                return "Keine Informationen für dieses Szenario verfügbar.";
+            }
+
+            return sceneData.loadingMessage;
         }
 
         /// <summary>
@@ -154,7 +170,8 @@ namespace OVGU.VAR.VRResist
                 yield break;
             }
 
-            // Load the scene asynchronously and additively
+            // Load the scene asynchronously as single scene
+
             AsyncOperation asyncLoad = SceneManager.LoadSceneAsync(sceneData.sceneName, LoadSceneMode.Single);
             asyncLoad.allowSceneActivation = false;
 
@@ -254,6 +271,12 @@ namespace OVGU.VAR.VRResist
                 int percentage = Mathf.RoundToInt(progress * 100);
                 loadingText.text = $"{baseMessage}\n{percentage}%";
             }
+
+            //update progress slider
+            if (loadingProgressSlider != null)
+            {
+                loadingProgressSlider.value = progress;
+            }
         }
 
         /// <summary>
@@ -348,6 +371,8 @@ namespace OVGU.VAR.VRResist
             }
         }
 
+
+        //Todo possibly move from mapping to scenarioscenes
         public string[] GetAllSceneInfo()
         {
             var sceneInfoList = new List<string>();
@@ -383,7 +408,7 @@ public class ScenarioSceneData
 
     [Header("Scenario Info")]
     [TextArea(3, 6)]
-    [Tooltip("Information text displayed to user after scene loads")]
-    public string scenarioInfoText;
+    [Tooltip("Information texts displayed to user during the scenario")]
+    public string[] scenarioInfoTexts;
 }
 

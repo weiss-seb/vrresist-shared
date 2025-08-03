@@ -5,6 +5,7 @@ using UnityEngine.SceneManagement;
 using System.Linq;
 using UnityEngine.Events;
 using System;
+using TMPro;
 
 [Serializable]
 public class EventMessage
@@ -49,19 +50,23 @@ namespace OVGU.VAR.VRResist
         [Header("Camera System")]
         public CameraControl cameraController;
 
+        [Header("UI References")]
+        public TMP_Text infoTextUI;
+
         [Header("Debug Settings")]
         [SerializeField] bool enableDetailedLogging = true;
 
         public UnityEvent OnAudioClipsLoaded;
 
         // Dynamic NPC references - populated by ScenarioLoader
-        public GameObject patient, colleague, head_doctor;
-        private NPC patientNPC, colleagueNPC, head_doctorNPC;
+        public GameObject patient, colleague, head_doctor, family_father, family_mother;
+        private NPC patientNPC, colleagueNPC, head_doctorNPC, fatherNPC, motherNPC;
 
         // Legacy system variables - keeping for compatibility during transition
         private List<EventMessage> CurrentScenarioEventsList = new List<EventMessage>();
         private Coroutine eventCoroutine;
         private bool eventIsPlaying = false;
+        private int currentInfoTextIndex = 0;
 
         // Waypoint mapping for easy access
         private Dictionary<string, GameObject> waypoints = new Dictionary<string, GameObject>();
@@ -188,6 +193,16 @@ namespace OVGU.VAR.VRResist
                             if (enableDetailedLogging)
                                 Debug.Log($"[EventTriggerSystem] Got head_doctor reference: {character.name}");
                             break;
+                        case 3:
+                            family_father = character;
+                            if (enableDetailedLogging)
+                                Debug.Log($"[EventTriggerSystem] Got family_father reference: {character.name}");
+                            break;
+                        case 4:
+                            family_mother = character;
+                            if (enableDetailedLogging)
+                                Debug.Log($"[EventTriggerSystem] Got family_mother reference: {character.name}");
+                            break;
                     }
                 }
                 else
@@ -222,9 +237,8 @@ namespace OVGU.VAR.VRResist
                         Debug.Log($"[EventTriggerSystem] Got waypoint reference: {positionName}");
                 }
                 else
-                {
                     Debug.LogWarning($"[EventTriggerSystem] Waypoint '{positionName}' not found via ScenarioLoader!");
-                }
+
             }
         }
 
@@ -257,6 +271,11 @@ namespace OVGU.VAR.VRResist
                 AddAudioEvents("colleague", getAudioClips(colleague));
             if (head_doctor != null)
                 AddAudioEvents("head_doctor", getAudioClips(head_doctor));
+            if (family_father != null)
+                AddAudioEvents("family_father", getAudioClips(family_father));
+            if (family_mother != null)
+                AddAudioEvents("family_mother", getAudioClips(family_mother));
+
         }
 
 
@@ -276,6 +295,8 @@ namespace OVGU.VAR.VRResist
 
                 case "head_doctor":
                     //  orderedEventList[2] = audioClipNames.ToList();
+                    break;
+                case "family_father":
                     break;
 
                 default:
@@ -389,6 +410,23 @@ namespace OVGU.VAR.VRResist
             else
             {
                 Debug.LogWarning($"[EventTriggerSystem] Waypoint '{position}' not found or NPC '{npcName}' invalid!");
+            }
+        }
+
+        public void SetInfoText()
+        {
+            if (infoTextUI == null)
+            {
+                Debug.LogError("[EventTriggerSystem] InfoTextUI not assigned!");
+                return;
+            }
+            string text = scenarioData.scenarioInfoTexts.Length > currentInfoTextIndex
+                ? scenarioData.scenarioInfoTexts[currentInfoTextIndex]
+                : "";
+
+            if (infoTextUI != null)
+            {
+                infoTextUI.SetText(text);
             }
         }
 
