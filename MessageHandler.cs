@@ -1,9 +1,8 @@
 using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
-using UnityEngine.Events;
-using UnityEngine.Purchasing.MiniJSON;
-using System.Collections.Generic;
+using System;
+
 
 
 namespace OVGU.VAR.VRResist
@@ -16,15 +15,11 @@ namespace OVGU.VAR.VRResist
     #region EditoFields
     public class MessageHandler : MonoBehaviour
     {
-        [Header("NPC References")]
-        public GameObject chefarzt, kollege, patient;
+
         [Header("System References")]
         public EventTriggerSystem eventTriggerSystem;
         public StudyTaskManager taskManager;
         [SerializeField] ScenarioLoader scenarioLoader;
-
-        [SerializeField] MathTaskManager mathTaskManager;
-        [SerializeField] NBackTask nBackTaskManager;
 
         [Header("UI References")]
         public TMP_Text debugText;
@@ -82,9 +77,29 @@ namespace OVGU.VAR.VRResist
                 scenarioSceneManager = FindObjectOfType<ScenarioSceneManager>();
             }
 
-            _tcpServer = GameObject.Find("TCP_Server").GetComponent<TCPServer>();
+            if (scenarioLoader == null)
+            {
+                scenarioLoader = FindObjectOfType<ScenarioLoader>();
+                if (scenarioLoader == null)
+                {
+                    Debug.LogError("[MessageHandler] ScenarioLoader not found in scene!");
+                }
+            }
 
-            xrPrefab = GameObject.Find("XR_origin_handtracking");
+            //TODO probably not needed anymore, deprecated 
+            if (taskManager == null)
+            {
+                taskManager = FindObjectOfType<StudyTaskManager>();
+                if (taskManager == null)
+                {
+                    Debug.LogError("[MessageHandler] StudyTaskManager not found in scene!");
+                }
+            }
+
+
+            _tcpServer = GameObject.Find("TCP_Server").GetComponent<TCPServer>(); //comes from the scene that was loaded before
+
+            xrPrefab = GameObject.Find("XR Origin (XR Rig)");
             if (xrPrefab == null)
             {
                 Debug.LogError("[MessageHandler] XR Prefab not found in scene!");
@@ -166,7 +181,8 @@ namespace OVGU.VAR.VRResist
                    messageType == "ABORT_ALL" ||
                    messageType == "END_STUDY" ||
                    messageType == "REQUEST_STUDY_SETUP" ||
-                   messageType == "SCENARIO_CHANGE";
+                   messageType == "SCENARIO_CHANGE" ||
+                   messageType == "SET_INFO_TEXT";
         }
 
         /// <summary>
@@ -224,11 +240,26 @@ namespace OVGU.VAR.VRResist
                 case "REQUEST_STUDY_SETUP":
                     HandleStudySetupRequest(msg);
                     break;
+                case "SET_INFO_TEXT":
+                    HandleSetInfoText(msg);
+
+                    break;
 
                 default:
                     Debug.LogWarning($"[MessageHandler] Unknown core action type: {msg.type}");
                     break;
             }
+        }
+
+        private void HandleSetInfoText(EventMessage msg)
+        {
+            if (msg.content.Length < 1)
+            {
+                Debug.LogError("[MessageHandler] SET_INFO_TEXT requires 1 parameter: infoText");
+                return;
+            }
+
+            eventTriggerSystem.SetInfoText();
         }
 
         /// <summary>
@@ -492,10 +523,7 @@ namespace OVGU.VAR.VRResist
 
             try
             {
-                // Parse scenario data from msg.content[1] without using json. The 
-
-
-                //TODO scenariodata should be completely unpacked and injected into the next scene so that we can set up message handler there with the new characters and positions
+                string helpText = scenarioSceneManager.GetScenarioHelpText(scenarioID);
 
 
                 if (scenarioSceneManager != null)
@@ -552,21 +580,6 @@ namespace OVGU.VAR.VRResist
         }
 
 
-
-
-        /// <summary>
-        /// Move NPC to starting position for scenario
-        /// </summary>
-        private void MoveNPCToStartingPosition(string npcName, Vector3 startPosition)
-        {
-            GameObject npc = GetNPCObject(npcName);
-            if (npc != null && startPosition != Vector3.zero)
-            {
-                npc.transform.position = startPosition;
-                Debug.Log($"[MessageHandler] Moved {npcName} to starting position: {startPosition}");
-            }
-        }
-
         #endregion
 
         /// <summary>
@@ -585,10 +598,7 @@ namespace OVGU.VAR.VRResist
                     SendEventMessageToClient(new EventMessage("scenarioList", sceneInfo));
                 }
 
-                // Send available audio clips for each NPC
-                // SendEventMessageToClient(new EventMessage("audioClipsListChefarzt", GetAudioClipsForCharacter(chefarzt)));
-                // SendEventMessageToClient(new EventMessage("audioClipsListKollege", GetAudioClipsForCharacter(kollege)));
-                // SendEventMessageToClient(new EventMessage("audioClipsListPatient", GetAudioClipsForCharacter(patient)));
+
 
             }
         }
@@ -604,19 +614,6 @@ namespace OVGU.VAR.VRResist
             }
         }
 
-        /// <summary>
-        /// Get NPC GameObject by standardized name
-        /// </summary>
-        private GameObject GetNPCObject(string npcName)
-        {
-            switch (npcName)
-            {
-                case "chefarzt": return chefarzt;
-                case "kollege": return kollege;
-                case "patient": return patient;
-                default: return null;
-            }
-        }
 
         /// <summary>
         ///  // Convert the message to JSON and send it via TCP

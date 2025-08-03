@@ -23,6 +23,8 @@ namespace OVGU.VAR.VRResist
         private Dictionary<string, GameObject> foundWaypoints = new Dictionary<string, GameObject>();
         private Dictionary<string, Camera> foundCameras = new Dictionary<string, Camera>();
 
+        private int currentInfoTextIndex = 0;
+
 
 
         [System.Serializable]
@@ -319,6 +321,19 @@ namespace OVGU.VAR.VRResist
             return characters;
         }
 
+        internal string GetNextScenarioHelpText()
+        {
+            if (currentInfoTextIndex < scenarioData.messages.Length)
+            {
+                return scenarioData.messages[currentInfoTextIndex++];
+            }
+            else
+            {
+                Debug.LogWarning("[ScenarioLoader] No more help texts available!");
+                return null;
+            }
+        }
+
         /// <summary>
         /// Apply found waypoint references to EventTriggerSystem
         /// Dynamic mapping based on availablePositions array
@@ -432,5 +447,6 @@ namespace OVGU.VAR.VRResist
 
             return char.ToUpper(input[0]) + input.Substring(1).ToLower();
         }
+
     }
 }

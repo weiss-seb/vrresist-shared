@@ -54,7 +54,7 @@ public class CameraControl : MonoBehaviour
         {
             currentCameraId = camPositions.Count - 1;
         }
-        else if (currentCameraId >= camPositions.Count)
+        else if (currentCameraId > camPositions.Count)
         {
             currentCameraId = 0;
         }
