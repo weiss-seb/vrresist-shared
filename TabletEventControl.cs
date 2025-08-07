@@ -724,6 +724,21 @@ namespace OVGU.VAR.VRResist
                 Debug.Log("[TabletEventControl] Cleared all character panels");
         }
 
+        public void SetNextInfoText()
+        {
+            if (webSocketClient != null)
+            {
+                var message = new EventMessage("SET_INFO_TEXT", new string[] { });
+                webSocketClient.SendEventMessage(message);
+                Debug.Log("[TabletEventControl] Requested study setup from HMD");
+            }
+            else
+            {
+                Debug.LogWarning("[TabletEventControl] WebSocketClient is null!");
+            }
+
+        }
+
         /// <summary>
         /// Request study setup from HMD
         /// </summary>
