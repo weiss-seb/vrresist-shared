@@ -52,6 +52,7 @@ namespace OVGU.VAR.VRResist
 
         [Header("UI References")]
         public TMP_Text infoTextUI;
+        public AudioSource audioMessageSource;
 
         [Header("Debug Settings")]
         [SerializeField] bool enableDetailedLogging = true;
@@ -426,8 +427,10 @@ namespace OVGU.VAR.VRResist
 
             if (infoTextUI != null)
             {
+                infoTextUI.SetText("");
                 infoTextUI.SetText(text);
             }
+            currentInfoTextIndex++;
         }
 
         /// <summary>

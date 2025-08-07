@@ -253,12 +253,6 @@ namespace OVGU.VAR.VRResist
 
         private void HandleSetInfoText(EventMessage msg)
         {
-            if (msg.content.Length < 1)
-            {
-                Debug.LogError("[MessageHandler] SET_INFO_TEXT requires 1 parameter: infoText");
-                return;
-            }
-
             eventTriggerSystem.SetInfoText();
         }
 
