@@ -59,9 +59,9 @@ namespace OVGU.VAR.VRResist
 
         public UnityEvent OnAudioClipsLoaded;
 
-        // Dynamic NPC references - populated by ScenarioLoader
-        public GameObject patient, colleague, head_doctor, family_father, family_mother;
-        private NPC patientNPC, colleagueNPC, head_doctorNPC, fatherNPC, motherNPC;
+        // Dynamic character system - replaces hardcoded character references
+        private Dictionary<string, GameObject> characters = new Dictionary<string, GameObject>();
+        private Dictionary<string, NPC> npcs = new Dictionary<string, NPC>();
 
         // Legacy system variables - keeping for compatibility during transition
         private List<EventMessage> CurrentScenarioEventsList = new List<EventMessage>();
@@ -69,6 +69,9 @@ namespace OVGU.VAR.VRResist
         private bool eventIsPlaying = false;
         private int currentInfoTextIndex = 0;
 
+        // Dynamic NPC references - populated by ScenarioLoader
+        public GameObject patient, colleague, head_doctor, family_father, family_mother;
+        private NPC patientNPC, colleagueNPC, head_doctorNPC, fatherNPC, motherNPC;
         // Waypoint mapping for easy access
         private Dictionary<string, GameObject> waypoints = new Dictionary<string, GameObject>();
 
@@ -159,9 +162,8 @@ namespace OVGU.VAR.VRResist
             if (enableDetailedLogging)
                 Debug.Log("[EventTriggerSystem] Initialization complete");
         }
-
         /// <summary>
-        /// Get character references from ScenarioLoader
+        /// Get character references from ScenarioLoader - Dynamic approach
         /// </summary>
         private void GetCharacterReferences()
         {
@@ -171,46 +173,31 @@ namespace OVGU.VAR.VRResist
                 return;
             }
 
-            // Map characters based on array order (same as ScenarioLoader)
-            for (int i = 0; i < scenarioData.characterNames.Length && i < 3; i++)
+            characters.Clear();
+
+            // Dynamically load all characters without hardcoded limits
+            foreach (string characterName in scenarioData.characterNames)
             {
-                GameObject character = scenarioLoader.GetCharacter(scenarioData.characterNames[i]);
+                if (string.IsNullOrEmpty(characterName)) continue;
+
+                GameObject character = scenarioLoader.GetCharacter(characterName);
                 if (character != null)
                 {
-                    switch (i)
-                    {
-                        case 0:
-                            patient = character;
-                            if (enableDetailedLogging)
-                                Debug.Log($"[EventTriggerSystem] Got patient reference: {character.name}");
-                            break;
-                        case 1:
-                            colleague = character;
-                            if (enableDetailedLogging)
-                                Debug.Log($"[EventTriggerSystem] Got colleague reference: {character.name}");
-                            break;
-                        case 2:
-                            head_doctor = character;
-                            if (enableDetailedLogging)
-                                Debug.Log($"[EventTriggerSystem] Got head_doctor reference: {character.name}");
-                            break;
-                        case 3:
-                            family_father = character;
-                            if (enableDetailedLogging)
-                                Debug.Log($"[EventTriggerSystem] Got family_father reference: {character.name}");
-                            break;
-                        case 4:
-                            family_mother = character;
-                            if (enableDetailedLogging)
-                                Debug.Log($"[EventTriggerSystem] Got family_mother reference: {character.name}");
-                            break;
-                    }
+                    // Store with both original name and lowercase for flexible lookup
+                    characters[characterName] = character;
+                    characters[characterName.ToLower()] = character;
+
+                    if (enableDetailedLogging)
+                        Debug.Log($"[EventTriggerSystem] Got character reference: {characterName} -> {character.name}");
                 }
                 else
                 {
-                    Debug.LogWarning($"[EventTriggerSystem] Character '{scenarioData.characterNames[i]}' not found via ScenarioLoader!");
+                    Debug.LogWarning($"[EventTriggerSystem] Character '{characterName}' not found via ScenarioLoader!");
                 }
             }
+
+            if (enableDetailedLogging)
+                Debug.Log($"[EventTriggerSystem] Loaded {characters.Count / 2} characters"); // Divided by 2 because we store each twice
         }
 
         /// <summary>
@@ -244,41 +231,138 @@ namespace OVGU.VAR.VRResist
         }
 
         /// <summary>
-        /// Initialize NPC wrapper structs
+        /// Initialize NPC wrapper structs for all loaded characters
         /// </summary>
         private void InitializeNPCs()
         {
-            patientNPC = new NPC(patient);
-            colleagueNPC = new NPC(colleague);
-            head_doctorNPC = new NPC(head_doctor);
+            npcs.Clear();
 
-            if (enableDetailedLogging)
+            foreach (var kvp in characters)
             {
-                Debug.Log($"[EventTriggerSystem] Initialized NPCs - Patient: {(patientNPC.contr != null ? "OK" : "MISSING")}, " +
-                         $"Colleague: {(colleagueNPC.contr != null ? "OK" : "MISSING")}, " +
-                         $"Head Doctor: {(head_doctorNPC.contr != null ? "OK" : "MISSING")}");
+                // Only process the original names (not lowercase duplicates)
+                if (kvp.Key == kvp.Key.ToLower()) continue;
+
+                NPC npc = new NPC(kvp.Value);
+                npcs[kvp.Key] = npc;
+                npcs[kvp.Key.ToLower()] = npc; // Also store lowercase for flexible lookup
+
+                if (enableDetailedLogging)
+                {
+                    Debug.Log($"[EventTriggerSystem] Initialized NPC: {kvp.Key} - " +
+                             $"Controller: {(npc.contr != null ? "OK" : "MISSING")}, " +
+                             $"Locomotion: {(npc.locom != null ? "OK" : "MISSING")}");
+                }
             }
         }
 
         /// <summary>
-        /// Initialize audio events from NPCs
+        /// Initialize audio events from all loaded NPCs
         /// </summary>
         private void InitializeAudioEvents()
         {
-            //Get the audio clips from the NPCs and add them to the event list for each NPC
-            if (patient != null)
-                AddAudioEvents("patient", getAudioClips(patient));
-            if (colleague != null)
-                AddAudioEvents("colleague", getAudioClips(colleague));
-            if (head_doctor != null)
-                AddAudioEvents("head_doctor", getAudioClips(head_doctor));
-            if (family_father != null)
-                AddAudioEvents("family_father", getAudioClips(family_father));
-            if (family_mother != null)
-                AddAudioEvents("family_mother", getAudioClips(family_mother));
+            foreach (var kvp in characters)
+            {
+                // Only process the original names (not lowercase duplicates)
+                if (kvp.Key == kvp.Key.ToLower()) continue;
 
+                string[] audioClips = getAudioClips(kvp.Value);
+                if (audioClips.Length > 0)
+                {
+                    AddAudioEvents(kvp.Key, audioClips);
+                }
+            }
         }
 
+
+        /// <summary>
+        /// Abort all current activities for all NPCs - Dynamic approach
+        /// </summary>
+        public void AbortAll()
+        {
+            // Stop all NPCs dynamically
+            foreach (var npc in npcs.Values)
+            {
+                if (npc.locom != null)
+                {
+                    npc.locom.stopWalking();
+                }
+                if (npc.contr != null)
+                {
+                    npc.contr.stopSpeaking();
+                }
+            }
+
+            // Stop any running coroutines
+            if (eventCoroutine != null)
+            {
+                StopCoroutine(eventCoroutine);
+                eventCoroutine = null;
+            }
+
+            // Clear event queue
+            CurrentScenarioEventsList.Clear();
+            eventIsPlaying = false;
+
+            Debug.Log("[EventTriggerSystem] Aborted all activities");
+        }
+
+
+        /// <summary>
+        /// Get NPC struct by name - Dynamic lookup
+        /// </summary>
+        private NPC GetNPCByName(string npcName)
+        {
+            if (npcs.TryGetValue(npcName, out NPC npc))
+            {
+                return npc;
+            }
+
+            // Try lowercase lookup as fallback
+            if (npcs.TryGetValue(npcName.ToLower(), out NPC npcLower))
+            {
+                return npcLower;
+            }
+
+            if (enableDetailedLogging)
+                Debug.LogWarning($"[EventTriggerSystem] NPC '{npcName}' not found. Available NPCs: {string.Join(", ", npcs.Keys.Where(k => k == k.ToLower() ? false : true))}");
+
+            return new NPC(); // Return empty NPC struct
+        }
+
+        /// <summary>
+        /// Get character GameObject by name - Dynamic lookup
+        /// </summary>
+        public GameObject GetCharacterByName(string characterName)
+        {
+            if (characters.TryGetValue(characterName, out GameObject character))
+            {
+                return character;
+            }
+
+            // Try lowercase lookup as fallback
+            if (characters.TryGetValue(characterName.ToLower(), out GameObject characterLower))
+            {
+                return characterLower;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Get all available character names
+        /// </summary>
+        public string[] GetAvailableCharacterNames()
+        {
+            return characters.Keys.Where(k => k == k.ToLower() ? false : true).ToArray(); // Only original names, not lowercase duplicates
+        }
+
+        /// <summary>
+        /// Check if a character exists
+        /// </summary>
+        public bool HasCharacter(string characterName)
+        {
+            return characters.ContainsKey(characterName) || characters.ContainsKey(characterName.ToLower());
+        }
 
         // adds scenario event to the event queue
         public void AddAudioEvents(string NPCName, string[] audioClipNames)
@@ -505,41 +589,6 @@ namespace OVGU.VAR.VRResist
             }
         }
 
-        /// <summary>
-        /// Abort all current activities - Direct method call
-        /// </summary>
-        public void AbortAll()
-        {
-            // Stop all NPCs
-            if (patientNPC.locom != null)
-            {
-                patientNPC.locom.stopWalking();
-                patientNPC.contr.stopSpeaking();
-            }
-            if (colleagueNPC.locom != null)
-            {
-                colleagueNPC.locom.stopWalking();
-                colleagueNPC.contr.stopSpeaking();
-            }
-            if (head_doctorNPC.locom != null)
-            {
-                head_doctorNPC.locom.stopWalking();
-                head_doctorNPC.contr.stopSpeaking();
-            }
-
-            // Stop any running coroutines
-            if (eventCoroutine != null)
-            {
-                StopCoroutine(eventCoroutine);
-                eventCoroutine = null;
-            }
-
-            // Clear event queue
-            CurrentScenarioEventsList.Clear();
-            eventIsPlaying = false;
-
-            Debug.Log("[EventTriggerSystem] Aborted all activities");
-        }
 
         /// <summary>
         /// End the study session - Direct method call
@@ -550,29 +599,8 @@ namespace OVGU.VAR.VRResist
             // It's safer to load by scene name or build index from a configuration file
             // rather than a hardcoded index.
             // For now, keeping the original logic.
-            SceneManager.LoadScene(4); // Assuming scene 4 is the end scene
+            SceneManager.LoadScene(0);
+
+
         }
-
-        // ===== HELPER METHODS =====
-
-        /// <summary>
-        /// Get NPC struct by name
-        /// </summary>
-        private NPC GetNPCByName(string npcName)
-        {
-            switch (npcName.ToLower())
-            {
-                case "patient": return patientNPC;
-                case "colleague": return colleagueNPC;
-                case "head_doctor":
-                case "chefarzt": // Added alias for consistency
-                    return head_doctorNPC;
-                default:
-                    Debug.LogWarning($"[EventTriggerSystem] Unknown NPC: {npcName}");
-                    return new NPC(); // Return an empty NPC struct to avoid null issues
-            }
-        }
-
-
     }
-}

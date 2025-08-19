@@ -179,7 +179,7 @@ namespace OVGU.VAR.VRResist
                    messageType == "NBACK_TASK" ||
                    messageType == "CAMERA_CHANGE" ||
                    messageType == "ABORT_ALL" ||
-                   messageType == "END_STUDY" ||
+                   messageType == "END_SCENE" ||
                    messageType == "REQUEST_STUDY_SETUP" ||
                    messageType == "SCENARIO_CHANGE" ||
                    messageType == "SET_INFO_TEXT";
@@ -229,8 +229,8 @@ namespace OVGU.VAR.VRResist
                     HandleAbortAll(msg);
                     break;
 
-                case "END_STUDY":
-                    HandleEndStudy(msg);
+                case "END_SCENE":
+                    HandleEndScene(msg);
                     break;
 
                 case "SCENARIO_CHANGE":
@@ -489,7 +489,7 @@ namespace OVGU.VAR.VRResist
         /// Handle end study command
         /// Uses new simplified EventTriggerSystem.EndStudy() method
         /// </summary>
-        private void HandleEndStudy(EventMessage msg)
+        private void HandleEndScene(EventMessage msg)
         {
             Debug.Log("[MessageHandler] Ending study");
 
