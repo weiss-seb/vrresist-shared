@@ -525,7 +525,7 @@ namespace OVGU.VAR.VRResist
             NPC npc = GetNPCByName(npcName);
             if (npc.contr != null && npc.locom != null)
             {
-                npc.contr.Speak(audioClip);
+                npc.contr.Speak(audioClip, scenarioData.GetAnimationStyleForAudio(npcName, audioClip));
                 npc.locom.lookAt(me);
                 npc.locom.setTurnTarget(me);
 
@@ -589,7 +589,6 @@ namespace OVGU.VAR.VRResist
             }
         }
 
-
         /// <summary>
         /// End the study session - Direct method call
         /// </summary>
@@ -601,6 +600,6 @@ namespace OVGU.VAR.VRResist
             // For now, keeping the original logic.
             SceneManager.LoadScene(0);
 
-
         }
     }
+}
