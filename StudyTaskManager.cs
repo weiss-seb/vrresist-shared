@@ -24,10 +24,6 @@ public class StudyTaskManager : MonoBehaviour
     private TMP_Text taskTitle;
     public GameObject taskCanvas;
 
-    // List of tasks (can be BaseTask or StressorStudyTask)
-    public List<BaseTask> taskList = new List<BaseTask>();
-
-
     // Task queue management
     private Queue<BaseTask> pendingTasks = new Queue<BaseTask>();
     private Queue<StressorStudyTask> pendingStressorTasks = new Queue<StressorStudyTask>();
@@ -78,7 +74,6 @@ public class StudyTaskManager : MonoBehaviour
         }
     }
 
-
     /// <summary>
     /// Set task by name (legacy support + enhanced functionality)
     /// </summary>
@@ -108,32 +103,6 @@ public class StudyTaskManager : MonoBehaviour
 
         if (taskText != null)
             taskText.text = " Zurzeit keine weiteren Aufgaben";
-    }
-
-    public string[] GetSerializableTaskList()
-    {
-        // Convert complex task objects to simple strings
-        List<string> taskNames = new List<string>();
-
-        if (taskList != null)
-        {
-            foreach (var task in taskList)
-            {
-                if (task != null)
-                {
-                    // Extract just the task name or identifier
-                    taskNames.Add(task.ToString()); // or task.name, task.id, etc.
-                }
-            }
-        }
-
-        // Add default tasks if none exist
-        if (taskNames.Count == 0)
-        {
-            taskNames.AddRange(new string[] { "math_task", "nback_task", "noTasks" });
-        }
-
-        return taskNames.ToArray();
     }
 
     /// <summary>

@@ -1,8 +1,7 @@
+﻿using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using TMPro;
-using UnityEngine.SceneManagement;
-using System;
-
 
 
 namespace OVGU.VAR.VRResist
@@ -11,35 +10,49 @@ namespace OVGU.VAR.VRResist
     /// Streamlined message handler for VR study system
     /// Processes messages from remote tablet and executes corresponding actions in HMD
     /// </summary>
-
-    #region EditoFields
     public class MessageHandler : MonoBehaviour
     {
+        [Header("NPC References")]
+        public GameObject chefarzt, kollege, patient, doctor, anesthesiologist;
 
         [Header("System References")]
         public EventTriggerSystem eventTriggerSystem;
         public StudyTaskManager taskManager;
-        [SerializeField] ScenarioLoader scenarioLoader;
+        [SerializeField] CameraControl cameraController;
+        [SerializeField] MathTaskManager mathTaskManager;
+        [SerializeField] NBackTask nBackTaskManager;
+
+        [Header("Position References")]
+        [Tooltip("Waypoint GameObjects for NPC movement - will be auto-populated from EventTriggerSystem if not set")]
+        [SerializeField] GameObject wpBedLeft1;
+        [SerializeField] GameObject wpBedLeft2;
+        [SerializeField] GameObject wpBedRight1;
+        [SerializeField] GameObject wpDoorInside;
+        [SerializeField] GameObject wpDoorOutside;
+        [SerializeField] GameObject wpOutside;
 
         [Header("UI References")]
         public TMP_Text debugText;
         [SerializeField] ScenarioSceneManager scenarioSceneManager;
 
-
-        TCPServer _tcpServer;
-
-        [Header("XR Prefab")]
-        [SerializeField] GameObject xrPrefab;
+        [Header("Network")]
+        [SerializeField] TCPServer _tcpServer;
 
         [Header("Debug Settings")]
         [SerializeField] bool enableDetailedLogging = true;
 
-
-        #endregion
-        #region LifeCycle
         void Start()
         {
-            eventTriggerSystem = FindObjectOfType<EventTriggerSystem>();
+            // Auto-populate waypoint references from EventTriggerSystem if not manually assigned
+            if (eventTriggerSystem != null)
+            {
+                if (wpBedLeft1 == null) wpBedLeft1 = eventTriggerSystem.wpBedLeft1;
+                if (wpBedLeft2 == null) wpBedLeft2 = eventTriggerSystem.wpBedLeft2;
+                if (wpBedRight1 == null) wpBedRight1 = eventTriggerSystem.wpBedRight1;
+                if (wpDoorInside == null) wpDoorInside = eventTriggerSystem.wpDoorInside;
+                if (wpDoorOutside == null) wpDoorOutside = eventTriggerSystem.wpDoorOutside;
+                if (wpOutside == null) wpOutside = eventTriggerSystem.wpOutside;
+            }
 
             // Find reference to ScenarioSceneManager loaded in the waiting room scene
             if (scenarioSceneManager == null)
@@ -51,67 +64,6 @@ namespace OVGU.VAR.VRResist
                 }
             }
         }
-
-        void OnEnable()
-        {
-            SceneManager.sceneLoaded += OnSceneLoaded;
-        }
-
-        void OnDisable()
-        {
-            SceneManager.sceneLoaded -= OnSceneLoaded;
-        }
-
-        void OnSceneLoaded(Scene scene, LoadSceneMode mode)
-        {
-            Debug.Log($"[MessageHandler] Scene loaded: {scene.name} (mode: {mode})");
-
-            // Reinitialize references after scene load
-            if (eventTriggerSystem == null)
-            {
-                eventTriggerSystem = FindObjectOfType<EventTriggerSystem>();
-            }
-
-            if (scenarioSceneManager == null)
-            {
-                scenarioSceneManager = FindObjectOfType<ScenarioSceneManager>();
-            }
-
-            if (scenarioLoader == null)
-            {
-                scenarioLoader = FindObjectOfType<ScenarioLoader>();
-                if (scenarioLoader == null)
-                {
-                    Debug.LogError("[MessageHandler] ScenarioLoader not found in scene!");
-                }
-            }
-
-            //TODO probably not needed anymore, deprecated 
-            if (taskManager == null)
-            {
-                taskManager = FindObjectOfType<StudyTaskManager>();
-                if (taskManager == null)
-                {
-                    Debug.LogError("[MessageHandler] StudyTaskManager not found in scene!");
-                }
-            }
-
-
-            _tcpServer = GameObject.Find("TCP_Server").GetComponent<TCPServer>(); //comes from the scene that was loaded before
-
-            xrPrefab = GameObject.Find("XR Origin (XR Rig)");
-            if (xrPrefab == null)
-            {
-                Debug.LogError("[MessageHandler] XR Prefab not found in scene!");
-            }
-
-            // Notify that setup is complete
-
-            Debug.Log("[MessageHandler] Message handler setup complete");
-
-        }
-
-        #endregion
 
         /// <summary>
         /// Main message processing method - handles all incoming messages from remote tablet
@@ -131,26 +83,11 @@ namespace OVGU.VAR.VRResist
             }
         }
 
-        public void SetTCPServer(TCPServer server)
-        {
-            _tcpServer = server;
-            if (_tcpServer != null)
-            {
-                //_tcpServer.OnMessageReceived += OnReceive;
-                Debug.Log("[MessageHandler] TCP Server set successfully");
-            }
-            else
-            {
-                Debug.LogError("[MessageHandler] Failed to set TCP Server - it is null");
-            }
-        }
-
         /// <summary>
         /// Process the parsed message based on its type
         /// </summary>
         private void ProcessMessage(EventMessage msg)
         {
-            Debug.Log($"[MessageHandler] Processing message of type: {msg.type}");
             // Handle new streamlined message types first
             if (IsCoreActionType(msg.type))
             {
@@ -179,10 +116,8 @@ namespace OVGU.VAR.VRResist
                    messageType == "NBACK_TASK" ||
                    messageType == "CAMERA_CHANGE" ||
                    messageType == "ABORT_ALL" ||
-                   messageType == "END_SCENE" ||
-                   messageType == "REQUEST_STUDY_SETUP" ||
-                   messageType == "SCENARIO_CHANGE" ||
-                   messageType == "SET_INFO_TEXT";
+                   messageType == "END_STUDY" ||
+                   messageType == "SCENARIO_CHANGE";
         }
 
         /// <summary>
@@ -229,31 +164,18 @@ namespace OVGU.VAR.VRResist
                     HandleAbortAll(msg);
                     break;
 
-                case "END_SCENE":
-                    HandleEndScene(msg);
+                case "END_STUDY":
+                    HandleEndStudy(msg);
                     break;
 
                 case "SCENARIO_CHANGE":
                     HandleScenarioChange(msg);
                     break;
 
-                case "REQUEST_STUDY_SETUP":
-                    HandleStudySetupRequest(msg);
-                    break;
-                case "SET_INFO_TEXT":
-                    HandleSetInfoText(msg);
-
-                    break;
-
                 default:
                     Debug.LogWarning($"[MessageHandler] Unknown core action type: {msg.type}");
                     break;
             }
-        }
-
-        private void HandleSetInfoText(EventMessage msg)
-        {
-            eventTriggerSystem.SetInfoText();
         }
 
         /// <summary>
@@ -310,8 +232,6 @@ namespace OVGU.VAR.VRResist
                     HandleRequest(msg);
                     break;
 
-
-                //TODO: put nback and math task handling here
                 case "task":
                     if (taskManager != null)
                     {
@@ -345,7 +265,7 @@ namespace OVGU.VAR.VRResist
                 return;
             }
 
-            string npcName = msg.content[0];
+            string npcName = StandardizeNPCName(msg.content[0]);
             string positionName = msg.content[1];
 
             Debug.Log($"[MessageHandler] Moving {npcName} to {positionName}");
@@ -367,14 +287,13 @@ namespace OVGU.VAR.VRResist
         /// </summary>
         private void HandleNPCTalk(EventMessage msg)
         {
-            Debug.Log("[MessageHandler] Handling NPC_TALK command");
             if (msg.content.Length < 2)
             {
                 Debug.LogError("[MessageHandler] NPC_TALK requires 2 parameters: npcName, audioClipName");
                 return;
             }
 
-            string npcName = msg.content[0];
+            string npcName = StandardizeNPCName(msg.content[0]);
             string audioClipName = msg.content[1];
 
             Debug.Log($"[MessageHandler] {npcName} speaking: {audioClipName}");
@@ -489,7 +408,7 @@ namespace OVGU.VAR.VRResist
         /// Handle end study command
         /// Uses new simplified EventTriggerSystem.EndStudy() method
         /// </summary>
-        private void HandleEndScene(EventMessage msg)
+        private void HandleEndStudy(EventMessage msg)
         {
             Debug.Log("[MessageHandler] Ending study");
 
@@ -510,21 +429,27 @@ namespace OVGU.VAR.VRResist
         /// </summary>
         private void HandleScenarioChange(EventMessage msg)
         {
+            if (msg.content.Length < 2)
+            {
+                Debug.LogError("[MessageHandler] SCENARIO_CHANGE requires 2 parameters: scenarioName, scenarioDataJson");
+                return;
+            }
 
-            int scenarioID = int.Parse(msg.content[0]);
+            string scenarioName = msg.content[0];
+            string scenarioDataJson = msg.content[1];
 
-            Debug.Log($"[MessageHandler] Changing to scenario: {scenarioID}");
+            Debug.Log($"[MessageHandler] Changing to scenario: {scenarioName}");
 
             try
             {
-                string helpText = scenarioSceneManager.GetScenarioHelpText(scenarioID);
+                // Parse scenario data from JSON
+                var scenarioData = JsonUtility.FromJson<ScenarioData>(scenarioDataJson);
 
-
-                if (scenarioSceneManager != null)
+                if (scenarioData != null && scenarioSceneManager != null)
                 {
                     // Use ScenarioSceneManager to load the appropriate scene
-                    scenarioSceneManager.LoadScenarioScene(scenarioID);
-                    Debug.Log($"[MessageHandler] Requested scene load for scenario ID: {scenarioID})");
+                    scenarioSceneManager.LoadScenarioScene(scenarioData.scenarioId, scenarioData.scenarioInfoText);
+                    Debug.Log($"[MessageHandler] Requested scene load for scenario: {scenarioName} (ID: {scenarioData.scenarioId})");
                 }
                 else if (scenarioSceneManager == null)
                 {
@@ -542,39 +467,21 @@ namespace OVGU.VAR.VRResist
         }
 
         /// <summary>
-        /// Handle study setup request - sends current scenario data to tablet
+        /// Move NPC to starting position for scenario
         /// </summary>
-        private void HandleStudySetupRequest(EventMessage msg)
+        private void MoveNPCToStartingPosition(string npcName, Vector3 startPosition)
         {
-            Debug.Log("[MessageHandler] Handling study setup request");
-
-            if (scenarioLoader == null)
+            GameObject npc = GetNPCObject(npcName);
+            if (npc != null && startPosition != Vector3.zero)
             {
-                Debug.LogError("[MessageHandler] ScenarioLoader not assigned!");
-                return;
-            }
-
-            try
-            {
-                // Build the study setup response data
-                string studySetupData = scenarioLoader.BuildStudySetupData();
-                Debug.Log("[MessageHandler] Study setup json = " + studySetupData);
-                // Create response message
-                EventMessage response = new EventMessage("STUDY_SETUP_RESPONSE", new string[] { studySetupData });
-
-                // Send response to tablet
-                SendEventMessageToClient(response);
-
-                Debug.Log("[MessageHandler] Study setup response sent successfully");
-            }
-            catch (System.Exception e)
-            {
-                Debug.LogError($"[MessageHandler] Error building study setup response: {e.Message}");
+                npc.transform.position = startPosition;
+                Debug.Log($"[MessageHandler] Moved {npcName} to starting position: {startPosition}");
             }
         }
 
-
         #endregion
+
+        #region System Message Handlers
 
         /// <summary>
         /// Handle refresh requests from remote tablet
@@ -585,15 +492,21 @@ namespace OVGU.VAR.VRResist
             {
                 Debug.Log("[MessageHandler] Handling refresh request");
 
-                //Send scene information by getting scene info from scenemanager and packing it into an EventMessage
-                if (scenarioSceneManager != null)
+                // Send available audio clips for each NPC
+                SendEventMessageToClient(new EventMessage("audioClipsListChefarzt", GetAudioClipsForCharacter(chefarzt)));
+                SendEventMessageToClient(new EventMessage("audioClipsListKollege", GetAudioClipsForCharacter(kollege)));
+                SendEventMessageToClient(new EventMessage("audioClipsListPatient", GetAudioClipsForCharacter(patient)));
+
+                // Send available events and tasks (if still needed)
+                if (eventTriggerSystem != null)
+                    SendEventMessageToClient(new EventMessage("eventList", eventTriggerSystem.eventList));
+
+                // Send simplified task list (legacy task blocks removed, only cognitive tasks supported)
+                if (taskManager != null)
                 {
-                    var sceneInfo = scenarioSceneManager.GetAllSceneInfo();
-                    SendEventMessageToClient(new EventMessage("scenarioList", sceneInfo));
+                    string[] simplifiedTaskList = new string[] { "math_task", "nback_task", "noTasks" };
+                    SendEventMessageToClient(new EventMessage("taskList", simplifiedTaskList));
                 }
-
-
-
             }
         }
 
@@ -608,6 +521,138 @@ namespace OVGU.VAR.VRResist
             }
         }
 
+        #endregion
+
+        #region Helper Methods
+
+        /// <summary>
+        /// Standardize NPC names to ensure consistency
+        /// </summary>
+        private string StandardizeNPCName(string inputName)
+        {
+            if (string.IsNullOrEmpty(inputName)) return "";
+
+            string name = inputName.ToLower().Trim();
+            switch (name)
+            {
+                case "chefarzt":
+                case "chef":
+                case "arzt":
+                case "dr":
+                    return "chefarzt";
+
+                case "kollege":
+                case "colleague":
+                case "mitarbeiter":
+                    return "kollege";
+
+                case "patient":
+                case "kranker":
+                case "person":
+                    return "patient";
+
+                case "doctor":
+                    return "doctor";
+
+                case "anesthesiologist":
+                case "anaesthesist":
+                case "narkosearzt":
+                    return "anesthesiologist";
+
+                default:
+                    Debug.LogWarning($"[MessageHandler] Unknown NPC name: {inputName}, using as-is");
+                    return inputName.ToLower();
+            }
+        }
+
+        /// <summary>
+        /// Get NPC GameObject by standardized name
+        /// </summary>
+        private GameObject GetNPCObject(string npcName)
+        {
+            switch (npcName)
+            {
+                case "chefarzt": return chefarzt;
+                case "kollege": return kollege;
+                case "patient": return patient;
+                case "doctor": return doctor;
+                case "anesthesiologist": return anesthesiologist;
+                default: return null;
+            }
+        }
+
+        /// <summary>
+        /// Get position GameObject by standardized position name
+        /// </summary>
+        private GameObject GetPositionObject(string positionName)
+        {
+            if (string.IsNullOrEmpty(positionName)) return null;
+
+            string standardizedName = positionName.ToLower().Trim();
+
+            switch (standardizedName)
+            {
+                case "bedleft1":
+                case "bed_left_1":
+                case "bedLeft1":
+                    return wpBedLeft1;
+
+                case "bedleft2":
+                case "bed_left_2":
+                case "bedLeft2":
+                    return wpBedLeft2;
+
+                case "bedright1":
+                case "bed_right_1":
+                case "bedRight1":
+                    return wpBedRight1;
+
+                case "doorinside":
+                case "door_inside":
+                case "doorInside":
+                    return wpDoorInside;
+
+                case "dooroutside":
+                case "door_outside":
+                case "doorOutside":
+                    return wpDoorOutside;
+
+                case "outside":
+                    return wpOutside;
+
+                default:
+                    // Fallback: try to find by exact name in scene
+                    GameObject found = GameObject.Find(positionName);
+                    if (found == null)
+                    {
+                        Debug.LogWarning($"[MessageHandler] Position not found: {positionName}. Available positions: bedLeft1, bedLeft2, bedRight1, doorInside, doorOutside, outside");
+                    }
+                    return found;
+            }
+        }
+
+        /// <summary>
+        /// Stop all NPC activities
+        /// </summary>
+        private void StopAllNPCs()
+        {
+            GameObject[] npcs = { chefarzt, kollege, patient, doctor, anesthesiologist };
+
+            foreach (var npc in npcs)
+            {
+                if (npc != null)
+                {
+                    var locomotion = npc.GetComponent<NPCLocomotion>();
+                    var controller = npc.GetComponent<NPCController>();
+
+                    if (locomotion != null) locomotion.stopWalking();
+                    if (controller != null) controller.stopSpeaking();
+                }
+            }
+        }
+
+
+        #endregion
 
         /// <summary>
         ///  // Convert the message to JSON and send it via TCP

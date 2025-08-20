@@ -5,7 +5,6 @@ using UnityEngine.SceneManagement;
 using System.Linq;
 using UnityEngine.Events;
 using System;
-using TMPro;
 
 [Serializable]
 public class EventMessage
@@ -28,20 +27,23 @@ public class EventMessage
 namespace OVGU.VAR.VRResist
 {
     /// <summary>
-    /// Simplified Event Trigger System - Gets references dynamically from ScenarioLoader
+    /// Simplified Event Trigger System - Direct method calls instead of complex coroutines
     /// Handles NPC movement, speech, environment interactions, and task display
     /// </summary>
     public class EventTriggerSystem : MonoBehaviour
     {
+        [Header("NPC References")]
+        public GameObject nurseObject, brotherObject, wifeObject;
+        private NPC nurse, brother, wife;
 
-        private SO_ScenarioData scenarioData;
+        [Header("Environment Objects")]
+        public GameObject doorWrapper;
+        public GameObject monitor;
+        public GameObject glass;
+        public GameObject me, patientHead;
 
-        [Header("Component References")]
-        [SerializeField] private ScenarioLoader scenarioLoader;
-
-        [Header("Environment Objects (Manual Assignment)")]
-
-        public GameObject me;
+        [Header("Navigation Waypoints")]
+        public GameObject wpDoorOutside, wpDoorInside, wpBedLeft1, wpBedLeft2, wpBedRight1, wpOutside, wpOutsideL;
 
         [Header("Task System References")]
         public MathTaskManager mathTaskManager;
@@ -50,47 +52,97 @@ namespace OVGU.VAR.VRResist
         [Header("Camera System")]
         public CameraControl cameraController;
 
-        [Header("UI References")]
-        public TMP_Text infoTextUI;
-        public AudioSource audioMessageSource;
-
         [Header("Debug Settings")]
         [SerializeField] bool enableDetailedLogging = true;
 
         public UnityEvent OnAudioClipsLoaded;
 
-        // Dynamic character system - replaces hardcoded character references
-        private Dictionary<string, GameObject> characters = new Dictionary<string, GameObject>();
-        private Dictionary<string, NPC> npcs = new Dictionary<string, NPC>();
-
         // Legacy system variables - keeping for compatibility during transition
         private List<EventMessage> CurrentScenarioEventsList = new List<EventMessage>();
         private Coroutine eventCoroutine;
         private bool eventIsPlaying = false;
-        private int currentInfoTextIndex = 0;
 
-        // Dynamic NPC references - populated by ScenarioLoader
-        public GameObject patient, colleague, head_doctor, family_father, family_mother;
-        private NPC patientNPC, colleagueNPC, head_doctorNPC, fatherNPC, motherNPC;
         // Waypoint mapping for easy access
         private Dictionary<string, GameObject> waypoints = new Dictionary<string, GameObject>();
 
+        public readonly string[] eventList ={
+        //Environment events
+        "endStudy",
+        "openDoor",
+        "closeDoor",
+        "openWindow",
+        "closeWindow",
+        "emptyGlass",
+        "dropBloodPressure",
+
+        //NPC events
+        "NurseWelcome1",
+        "NurseWelcome2",
+        "NurseGoodBye",
+        "FamilyEnter",
+        "WifeInquire",
+        "WifeConvinced",
+        "BrotherConvinced",
+        "FamilyExit",
+        "S2S3FamilyEnter",
+        "S2S3FamilyAsks",
+        "S2FamilySupport",
+        "S3Family",
+        "S3Family2"
+    };
+
+        public readonly List<List<string>> orderedEventList = new List<List<string>>
+    {
+        //nurse events
+        new List<string>() {
+            "NurseWelcome1",
+            "NurseWelcome2",
+            "NurseGoodBye",
+            "S2S3FamilyEnter",
+            "S2S3FamilyAsks",
+            "S2FamilySupport",
+            "S3Family",
+            "S3Family2"
+        },
+
+        //brother events
+        new List<string>() {
+            "BrotherConvinced",
+            "S2S3FamilyEnter",
+            "S2S3FamilyAsks",
+            "S2FamilySupport",
+            "S3Family",
+            "S3Family2"
+        },
+
+        // wife
+        new List<string>() {
+            "openWindow",
+            "closeWindow",
+            "emptyGlass",
+            "dropBloodPressure",
+            //"FamilyEnter",
+            //"FamilyExit",
+        },
+
+        //environment events
+        new List<string>() {
+            "openWindow",
+            "closeWindow",
+            "emptyGlass",
+            "dropBloodPressure",
+            "FamilyEnter",
+            "FamilyExit",
+        },
+    };
 
         // little wrapper for NPC controller scripts
         private struct NPC
         {
             public NPC(GameObject nPCObject)
             {
-                if (nPCObject != null)
-                {
-                    this.contr = nPCObject.GetComponent<NPCController>();
-                    this.locom = nPCObject.GetComponent<NPCLocomotion>();
-                }
-                else
-                {
-                    this.contr = null;
-                    this.locom = null;
-                }
+                this.contr = nPCObject.GetComponent<NPCController>();
+                this.locom = nPCObject.GetComponent<NPCLocomotion>();
             }
 
             public NPCController contr;
@@ -100,268 +152,26 @@ namespace OVGU.VAR.VRResist
         // Start is called before the first frame update
         void Start()
         {
-            // Find ScenarioLoader if not assigned
-            if (scenarioLoader == null)
-            {
-                scenarioLoader = FindObjectOfType<ScenarioLoader>();
-                if (scenarioLoader == null)
-                {
-                    Debug.LogError("[EventTriggerSystem] ScenarioLoader not found in scene!");
-                    return;
-                }
-            }
+            nurse = new NPC(nurseObject);
+            brother = new NPC(brotherObject);
+            wife = new NPC(wifeObject);
 
-            scenarioData = scenarioLoader.GetScenarioData();
-
-            me = Camera.main?.gameObject;
-
-            // Wait a frame to ensure ScenarioLoader has finished loading
-            StartCoroutine(InitializeAfterScenarioLoad());
-        }
-
-        /// <summary>
-        /// Initialize after ScenarioLoader has finished loading references
-        /// </summary>
-        private IEnumerator InitializeAfterScenarioLoad()
-        {
-            yield return null; // Wait one frame
-
-            InitializeReferences();
-        }
-
-        /// <summary>
-        /// Initialize all references from ScenarioLoader
-        /// </summary>
-        private void InitializeReferences()
-        {
-            if (scenarioLoader == null || scenarioData == null)
-            {
-                Debug.LogError("[EventTriggerSystem] ScenarioLoader or ScenarioData not available!");
-                return;
-            }
-
-            // Get character references from ScenarioLoader
-            GetCharacterReferences();
-
-            // Get waypoint references from ScenarioLoader
-            GetWaypointReferences();
-
-            // Initialize NPC wrappers
-            InitializeNPCs();
-
-            // Find main camera
             me = GameObject.Find("Main Camera");
-            if (me == null)
-            {
-                me = Camera.main?.gameObject;
-            }
 
-            // Get audio clips and initialize event system
-            InitializeAudioEvents();
-
-            if (enableDetailedLogging)
-                Debug.Log("[EventTriggerSystem] Initialization complete");
-        }
-        /// <summary>
-        /// Get character references from ScenarioLoader - Dynamic approach
-        /// </summary>
-        private void GetCharacterReferences()
-        {
-            if (scenarioData.characterNames == null || scenarioData.characterNames.Length == 0)
-            {
-                Debug.LogWarning("[EventTriggerSystem] No character names configured in scenario data!");
-                return;
-            }
-
-            characters.Clear();
-
-            // Dynamically load all characters without hardcoded limits
-            foreach (string characterName in scenarioData.characterNames)
-            {
-                if (string.IsNullOrEmpty(characterName)) continue;
-
-                GameObject character = scenarioLoader.GetCharacter(characterName);
-                if (character != null)
-                {
-                    // Store with both original name and lowercase for flexible lookup
-                    characters[characterName] = character;
-                    characters[characterName.ToLower()] = character;
-
-                    if (enableDetailedLogging)
-                        Debug.Log($"[EventTriggerSystem] Got character reference: {characterName} -> {character.name}");
-                }
-                else
-                {
-                    Debug.LogWarning($"[EventTriggerSystem] Character '{characterName}' not found via ScenarioLoader!");
-                }
-            }
-
-            if (enableDetailedLogging)
-                Debug.Log($"[EventTriggerSystem] Loaded {characters.Count / 2} characters"); // Divided by 2 because we store each twice
+            //Get the audio clips from the NPCs and add them to the event list for each NPC
+            AddAudioEvents("nurse", getAudioClips(nurseObject));
+            AddAudioEvents("brother", getAudioClips(brotherObject));
+            AddAudioEvents("wife", getAudioClips(wifeObject));
         }
 
-        /// <summary>
-        /// Get waypoint references from ScenarioLoader
-        /// </summary>
-        private void GetWaypointReferences()
+        // Update is called once per frame
+        void Update()
         {
-            if (scenarioData.availablePositions == null || scenarioData.availablePositions.Length == 0)
+            if (CurrentScenarioEventsList.Count > 0 && !eventIsPlaying)
             {
-                Debug.LogWarning("[EventTriggerSystem] No waypoint positions configured in scenario data!");
-                return;
+                eventIsPlaying = true;
+                eventCoroutine = StartCoroutine(ExecuteEventCoroutineForMessage(CurrentScenarioEventsList[0]));
             }
-
-            // Get waypoints from ScenarioLoader and populate the dictionary
-            waypoints.Clear();
-            foreach (string positionName in scenarioData.availablePositions)
-            {
-                GameObject waypoint = scenarioLoader.GetWaypoint(positionName);
-                if (waypoint != null)
-                {
-                    string key = positionName.ToLower();
-                    waypoints[key] = waypoint;
-
-                    if (enableDetailedLogging)
-                        Debug.Log($"[EventTriggerSystem] Got waypoint reference: {positionName}");
-                }
-                else
-                    Debug.LogWarning($"[EventTriggerSystem] Waypoint '{positionName}' not found via ScenarioLoader!");
-
-            }
-        }
-
-        /// <summary>
-        /// Initialize NPC wrapper structs for all loaded characters
-        /// </summary>
-        private void InitializeNPCs()
-        {
-            npcs.Clear();
-
-            foreach (var kvp in characters)
-            {
-                // Only process the original names (not lowercase duplicates)
-                if (kvp.Key == kvp.Key.ToLower()) continue;
-
-                NPC npc = new NPC(kvp.Value);
-                npcs[kvp.Key] = npc;
-                npcs[kvp.Key.ToLower()] = npc; // Also store lowercase for flexible lookup
-
-                if (enableDetailedLogging)
-                {
-                    Debug.Log($"[EventTriggerSystem] Initialized NPC: {kvp.Key} - " +
-                             $"Controller: {(npc.contr != null ? "OK" : "MISSING")}, " +
-                             $"Locomotion: {(npc.locom != null ? "OK" : "MISSING")}");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Initialize audio events from all loaded NPCs
-        /// </summary>
-        private void InitializeAudioEvents()
-        {
-            foreach (var kvp in characters)
-            {
-                // Only process the original names (not lowercase duplicates)
-                if (kvp.Key == kvp.Key.ToLower()) continue;
-
-                string[] audioClips = getAudioClips(kvp.Value);
-                if (audioClips.Length > 0)
-                {
-                    AddAudioEvents(kvp.Key, audioClips);
-                }
-            }
-        }
-
-
-        /// <summary>
-        /// Abort all current activities for all NPCs - Dynamic approach
-        /// </summary>
-        public void AbortAll()
-        {
-            // Stop all NPCs dynamically
-            foreach (var npc in npcs.Values)
-            {
-                if (npc.locom != null)
-                {
-                    npc.locom.stopWalking();
-                }
-                if (npc.contr != null)
-                {
-                    npc.contr.stopSpeaking();
-                }
-            }
-
-            // Stop any running coroutines
-            if (eventCoroutine != null)
-            {
-                StopCoroutine(eventCoroutine);
-                eventCoroutine = null;
-            }
-
-            // Clear event queue
-            CurrentScenarioEventsList.Clear();
-            eventIsPlaying = false;
-
-            Debug.Log("[EventTriggerSystem] Aborted all activities");
-        }
-
-
-        /// <summary>
-        /// Get NPC struct by name - Dynamic lookup
-        /// </summary>
-        private NPC GetNPCByName(string npcName)
-        {
-            if (npcs.TryGetValue(npcName, out NPC npc))
-            {
-                return npc;
-            }
-
-            // Try lowercase lookup as fallback
-            if (npcs.TryGetValue(npcName.ToLower(), out NPC npcLower))
-            {
-                return npcLower;
-            }
-
-            if (enableDetailedLogging)
-                Debug.LogWarning($"[EventTriggerSystem] NPC '{npcName}' not found. Available NPCs: {string.Join(", ", npcs.Keys.Where(k => k == k.ToLower() ? false : true))}");
-
-            return new NPC(); // Return empty NPC struct
-        }
-
-        /// <summary>
-        /// Get character GameObject by name - Dynamic lookup
-        /// </summary>
-        public GameObject GetCharacterByName(string characterName)
-        {
-            if (characters.TryGetValue(characterName, out GameObject character))
-            {
-                return character;
-            }
-
-            // Try lowercase lookup as fallback
-            if (characters.TryGetValue(characterName.ToLower(), out GameObject characterLower))
-            {
-                return characterLower;
-            }
-
-            return null;
-        }
-
-        /// <summary>
-        /// Get all available character names
-        /// </summary>
-        public string[] GetAvailableCharacterNames()
-        {
-            return characters.Keys.Where(k => k == k.ToLower() ? false : true).ToArray(); // Only original names, not lowercase duplicates
-        }
-
-        /// <summary>
-        /// Check if a character exists
-        /// </summary>
-        public bool HasCharacter(string characterName)
-        {
-            return characters.ContainsKey(characterName) || characters.ContainsKey(characterName.ToLower());
         }
 
         // adds scenario event to the event queue
@@ -370,18 +180,16 @@ namespace OVGU.VAR.VRResist
             Debug.Log("Add Audio Events");
             switch (NPCName)
             {
-                case "patient":
-                    //  orderedEventList[0] = audioClipNames.ToList();
+                case "nurse":
+                    orderedEventList[0] = audioClipNames.ToList();
                     break;
 
-                case "colleague":
-                    //      orderedEventList[1] = audioClipNames.ToList();
+                case "brother":
+                    orderedEventList[1] = audioClipNames.ToList();
                     break;
 
-                case "head_doctor":
-                    //  orderedEventList[2] = audioClipNames.ToList();
-                    break;
-                case "family_father":
+                case "wife":
+                    orderedEventList[2] = audioClipNames.ToList();
                     break;
 
                 default:
@@ -401,21 +209,12 @@ namespace OVGU.VAR.VRResist
                     case "all":
                         if (eventCoroutine != null) StopCoroutine(eventCoroutine);
 
-                        if (patientNPC.locom != null)
-                        {
-                            patientNPC.locom.stopWalking();
-                            patientNPC.contr.stopSpeaking();
-                        }
-                        if (colleagueNPC.locom != null)
-                        {
-                            colleagueNPC.locom.stopWalking();
-                            colleagueNPC.contr.stopSpeaking();
-                        }
-                        if (head_doctorNPC.locom != null)
-                        {
-                            head_doctorNPC.locom.stopWalking();
-                            head_doctorNPC.contr.stopSpeaking();
-                        }
+                        nurse.locom.stopWalking();
+                        nurse.contr.stopSpeaking();
+                        brother.locom.stopWalking();
+                        brother.contr.stopSpeaking();
+                        wife.locom.stopWalking();
+                        wife.contr.stopSpeaking();
 
                         CurrentScenarioEventsList.Clear();
                         eventIsPlaying = false;
@@ -425,19 +224,17 @@ namespace OVGU.VAR.VRResist
                         switch (eventMsg.content[1])
                         {
                             case "nurse":
-                                if (patientNPC.contr != null)
-                                    patientNPC.contr.stopSpeaking();
+                                nurse.contr.stopSpeaking();
                                 break;
                             case "brother":
-                                if (colleagueNPC.contr != null)
-                                    colleagueNPC.contr.stopSpeaking();
+                                brother.contr.stopSpeaking();
                                 break;
                             case "wife":
-                                if (head_doctorNPC.contr != null)
-                                    head_doctorNPC.contr.stopSpeaking();
+                                wife.contr.stopSpeaking();
                                 break;
                         }
                         break;
+
                 }
                 return;
             }
@@ -447,28 +244,275 @@ namespace OVGU.VAR.VRResist
             }
         }
 
+        // coroutine to play events
+        private IEnumerator ExecuteEventCoroutineForMessage(EventMessage eventMsg)
+        {
+            switch (eventMsg.type)
+            {
+                case "speak":
+                    switch (eventMsg.content[0])
+                    {
+                        case "nurse":
+                            lookAndSpeak(nurse, eventMsg.content[1]);
+                            break;
+                        case "brother":
+                            lookAndSpeak(brother, eventMsg.content[1]);
+                            break;
+                        case "wife":
+                            lookAndSpeak(wife, eventMsg.content[1]);
+                            break;
+                    }
+                    break;
+                case "event":
+                    switch (eventMsg.content[0])
+                    {
+                        case "endStudy":
+                            SceneManager.LoadScene(4);
+                            break;
+                        case "openDoor":
+                            openDoor();
+                            break;
+                        case "closeDoor":
+                            closeDoor();
+                            break;
+                        case "openWindow":
+                            //   windowWrapper.openWindow();
+                            break;
+                        case "closeWindow":
+                            //  windowWrapper.closeWindow();
+                            break;
+                        case "emptyGlass":
+                            //   glass.GetComponent<Glass>().setWater(false);
+                            break;
+                        case "dropBloodPressure":
+                            setPressureValue("50/30");
+                            break;
+                        case "NurseWelcome1":
+                            EventLogger.Instance.LogBeginAct(1);
+
+                            nurse.locom.lookAt(me);
+                            nurse.locom.setTurnTarget(me);
+                            nurse.contr.speak("Begruessung", "talk");
+                            yield return new WaitForSeconds(05f);
+                            nurse.locom.lookAt(patientHead);
+                            yield return new WaitUntil(() => !nurse.contr.audioSource.isPlaying);
+
+                            nurse.locom.lookAt(me);
+                            nurse.contr.speak("Aufgaben", "talk");
+                            yield return new WaitUntil(() => !nurse.contr.audioSource.isPlaying);
+                            break;
+                        case "NurseWelcome2":
+                            nurse.locom.lookAt(monitor);
+                            nurse.locom.setTurnTarget(monitor);
+                            nurse.contr.speak("WeiterbehandlungErklaeren", "talk");
+                            yield return new WaitForSeconds(05f);
+                            nurse.locom.lookAt(me);
+                            nurse.locom.setTurnTarget(me);
+                            yield return new WaitUntil(() => !nurse.contr.audioSource.isPlaying);
+
+                            yield return new WaitForSeconds(02f);
+                            nurse.locom.lookAt(me);
+                            nurse.locom.setTurnTarget(me);
+                            nurse.contr.speak("Zusammenfassung");
+                            yield return new WaitUntil(() => !nurse.contr.audioSource.isPlaying);
+                            break;
+                        case "NurseGoodBye":
+                            nurse.ToString();
+                            nurse.locom.walkToTarget(wpDoorInside);
+                            yield return new WaitForSeconds(0.1f);
+                            yield return new WaitUntil(() => nurse.locom.isTargetReached());
+                            openDoor();
+                            nurse.locom.lookAt(me);
+                            nurse.locom.setTurnTarget(me);
+                            nurse.contr.speak("Angehoerige");
+                            yield return new WaitUntil(() => !nurse.contr.audioSource.isPlaying);
+                            nurse.locom.walkToTarget(wpOutsideL);
+                            yield return new WaitForSeconds(1f);
+                            closeDoor();
+                            break;
+                        case "FamilyEnter":
+                            EventLogger.Instance.LogBeginAct(2);
+
+                            brother.locom.walkToTarget(wpBedLeft2);
+                            wife.locom.walkToTarget(wpBedLeft1);
+                            yield return new WaitForSeconds(2f);
+                            openDoor();
+                            yield return new WaitUntil(() => brother.locom.isTargetReached());
+                            yield return new WaitUntil(() => wife.locom.isTargetReached());
+                            closeDoor();
+
+                            brother.locom.setTurnTarget(patientHead);
+                            brother.locom.lookAt(patientHead);
+                            wife.locom.setTurnTarget(patientHead);
+                            wife.locom.lookAt(patientHead);
+
+                            yield return new WaitForSeconds(2f);
+                            brother.locom.setTurnTarget(me);
+                            brother.locom.lookAt(me);
+
+                            brother.contr.speak("begruessungBruder");
+                            yield return new WaitUntil(() => !brother.contr.audioSource.isPlaying);
+                            break;
+                        case "FamilyExit":
+                            brother.locom.walkToTarget(wpDoorInside);
+                            yield return new WaitUntil(() => brother.locom.isTargetReached());
+                            openDoor();
+                            yield return new WaitForSeconds(1.5f);
+
+                            wife.locom.walkToTarget(wpDoorInside);
+
+                            brother.locom.walkToTarget(wpOutside);
+                            wife.locom.walkToTarget(wpOutside);
+
+                            yield return new WaitForSeconds(2f);
+                            closeDoor();
+                            break;
+                        case "WifeInquire":
+                            wife.locom.setTurnTarget(me);
+                            wife.locom.lookAt(me);
+
+                            wife.contr.speak("WieGehtEsMeinemMann");
+                            yield return new WaitUntil(() => !wife.contr.audioSource.isPlaying);
+
+                            yield return new WaitForSeconds(3f);
+
+                            wife.locom.setTurnTarget(patientHead);
+                            wife.locom.lookAt(patientHead);
+                            break;
+                        case "WifeConvinced":
+                            wife.locom.setTurnTarget(me);
+                            wife.locom.lookAt(me);
+
+                            wife.contr.speak("FestUeberzeugtAufBesserung");
+                            yield return new WaitUntil(() => !wife.contr.audioSource.isPlaying);
+
+                            wife.locom.setTurnTarget(patientHead);
+                            wife.locom.lookAt(patientHead);
+                            break;
+                        case "BrotherConvinced":
+                            brother.locom.setTurnTarget(me);
+                            brother.locom.lookAt(me);
+
+                            brother.contr.speak("weiterFuehrenDerBehandlungBeteuern");
+                            yield return new WaitUntil(() => !brother.contr.audioSource.isPlaying);
+
+                            brother.locom.setTurnTarget(patientHead);
+                            brother.locom.lookAt(patientHead);
+                            break;
+                        case "S1Begin":
+                            EventLogger.Instance.LogBeginAct(3);
+                            break;
+                        case "S2S3FamilyEnter":
+                            EventLogger.Instance.LogBeginAct(3);
+
+                            brother.locom.walkToTarget(wpBedLeft2);
+                            wife.locom.walkToTarget(wpBedLeft1);
+                            yield return new WaitForSeconds(2f);
+                            openDoor();
+                            yield return new WaitUntil(() => brother.locom.isTargetReached());
+                            yield return new WaitUntil(() => wife.locom.isTargetReached());
+                            closeDoor();
+
+                            brother.locom.setTurnTarget(patientHead);
+                            brother.locom.lookAt(patientHead);
+                            wife.locom.setTurnTarget(patientHead);
+                            wife.locom.lookAt(patientHead);
+
+                            yield return new WaitForSeconds(2f);
+                            brother.locom.setTurnTarget(me);
+                            brother.locom.lookAt(me);
+
+                            brother.contr.speak("WurdenAngerufen");
+                            yield return new WaitUntil(() => !brother.contr.audioSource.isPlaying);
+
+                            wife.locom.setTurnTarget(me);
+                            wife.locom.lookAt(me);
+
+                            wife.contr.speak("S2S3_GehtsIhmGut");
+                            yield return new WaitUntil(() => !wife.contr.audioSource.isPlaying);
+                            break;
+                        case "S2S3FamilyAsks":
+                            wife.locom.setTurnTarget(me);
+                            wife.locom.lookAt(me);
+
+                            wife.contr.speak("S2S3_PflegerinSagtMachtKeinenSinn");
+                            yield return new WaitUntil(() => !wife.contr.audioSource.isPlaying);
+
+                            break;
+                        case "S2FamilySupport":
+                            brother.locom.setTurnTarget(me);
+                            brother.locom.lookAt(me);
+
+                            brother.contr.speak("S2_Vertrauen");
+                            yield return new WaitUntil(() => !brother.contr.audioSource.isPlaying);
+
+                            brother.locom.setTurnTarget(patientHead);
+                            brother.locom.lookAt(patientHead);
+                            break;
+                        case "S3Family":
+                            brother.locom.setTurnTarget(me);
+                            brother.locom.lookAt(me);
+
+                            brother.contr.speak("S3_weiterfuehren");
+                            yield return new WaitUntil(() => !brother.contr.audioSource.isPlaying);
+
+                            wife.locom.setTurnTarget(me);
+                            wife.locom.lookAt(me);
+
+                            wife.contr.speak("S3_GebenHoffnungNichtAuf");
+                            yield return new WaitUntil(() => !wife.contr.audioSource.isPlaying);
+
+                            break;
+                        case "S3Family2":
+                            brother.locom.setTurnTarget(me);
+                            brother.locom.lookAt(me);
+
+                            brother.contr.speak("S3_NichtZulassen");
+                            yield return new WaitUntil(() => !brother.contr.audioSource.isPlaying);
+
+                            wife.locom.setTurnTarget(me);
+                            wife.locom.lookAt(me);
+
+                            wife.contr.speak("S3_RegDichNichtAuf");
+                            yield return new WaitUntil(() => !wife.contr.audioSource.isPlaying);
+
+                            break;
+                    }
+                    break;
+            }
+
+            CurrentScenarioEventsList.RemoveAt(0);
+            eventIsPlaying = false;
+            yield return null;
+        }
+
+        // other controlls for objects in ICU 
+        private void openDoor()
+        {
+            doorWrapper.GetComponent<Animator>().SetTrigger("open");
+        }
+        private void closeDoor()
+        {
+            doorWrapper.GetComponent<Animator>().SetTrigger("close");
+        }
+        private void setPressureValue(string value)
+        {
+            // monitor.GetComponent<Monitor>().SetDisplayedValue(value);
+        }
 
         private void lookAndSpeak(NPC nPC, string clipName)
         {
-            if (nPC.contr != null && nPC.locom != null)
-            {
-                nPC.contr.Speak(clipName);
-                nPC.locom.lookAt(me);
-                nPC.locom.setTurnTarget(me);
-            }
+            nPC.contr.speak(clipName);
+            nPC.locom.lookAt(me);
+            nPC.locom.setTurnTarget(me);
         }
 
         public string[] getAudioClips(GameObject NPC)
         {
-            if (NPC == null) return new string[0];
-
-            NPCController controller = NPC.GetComponent<NPCController>();
-            if (controller == null || controller.audioClips == null) return new string[0];
-
-            string[] list = new string[controller.audioClips.Count];
+            string[] list = new string[NPC.GetComponent<NPCController>().audioClips.Count];
             for (int i = 0; i < list.Length; i++)
             {
-                list[i] = controller.audioClips[i].name;
+                list[i] = NPC.GetComponent<NPCController>().audioClips[i].name;
             }
             return list;
         }
@@ -482,39 +526,18 @@ namespace OVGU.VAR.VRResist
         public void MoveNPCTo(string npcName, string position)
         {
             NPC npc = GetNPCByName(npcName);
+            GameObject waypoint = GetWaypointByName(position);
 
-            if (waypoints.TryGetValue(position.ToLower(), out GameObject waypoint))
+            if (waypoint != null)
             {
-                if (npc.locom != null)
-                {
-                    npc.locom.walkToTarget(waypoint);
-                    if (enableDetailedLogging)
-                        Debug.Log($"[EventTriggerSystem] Moving {npcName} to {position}");
-                }
+                npc.locom.walkToTarget(waypoint);
+                if (enableDetailedLogging)
+                    Debug.Log($"[EventTriggerSystem] Moving {npcName} to {position}");
             }
             else
             {
-                Debug.LogWarning($"[EventTriggerSystem] Waypoint '{position}' not found or NPC '{npcName}' invalid!");
+                Debug.LogWarning($"[EventTriggerSystem] Waypoint '{position}' not found!");
             }
-        }
-
-        public void SetInfoText()
-        {
-            if (infoTextUI == null)
-            {
-                Debug.LogError("[EventTriggerSystem] InfoTextUI not assigned!");
-                return;
-            }
-            string text = scenarioData.scenarioInfoTexts.Length > currentInfoTextIndex
-                ? scenarioData.scenarioInfoTexts[currentInfoTextIndex]
-                : "";
-
-            if (infoTextUI != null)
-            {
-                infoTextUI.SetText("");
-                infoTextUI.SetText(text);
-            }
-            currentInfoTextIndex++;
         }
 
         /// <summary>
@@ -523,19 +546,12 @@ namespace OVGU.VAR.VRResist
         public void PlayNPCAudio(string npcName, string audioClip)
         {
             NPC npc = GetNPCByName(npcName);
-            if (npc.contr != null && npc.locom != null)
-            {
-                npc.contr.Speak(audioClip, scenarioData.GetAnimationStyleForAudio(npcName, audioClip));
-                npc.locom.lookAt(me);
-                npc.locom.setTurnTarget(me);
+            npc.contr.speak(audioClip);
+            npc.locom.lookAt(me);
+            npc.locom.setTurnTarget(me);
 
-                if (enableDetailedLogging)
-                    Debug.Log($"[EventTriggerSystem] {npcName} speaking: {audioClip}");
-            }
-            else
-            {
-                Debug.LogWarning($"[EventTriggerSystem] NPC '{npcName}' not found or invalid!");
-            }
+            if (enableDetailedLogging)
+                Debug.Log($"[EventTriggerSystem] {npcName} speaking: {audioClip}");
         }
 
         /// <summary>
@@ -590,16 +606,92 @@ namespace OVGU.VAR.VRResist
         }
 
         /// <summary>
+        /// Abort all current activities - Direct method call
+        /// </summary>
+        public void AbortAll()
+        {
+            // Stop all NPCs
+            nurse.locom.stopWalking();
+            nurse.contr.stopSpeaking();
+            brother.locom.stopWalking();
+            brother.contr.stopSpeaking();
+            wife.locom.stopWalking();
+            wife.contr.stopSpeaking();
+
+            // Stop any running coroutines
+            if (eventCoroutine != null)
+            {
+                StopCoroutine(eventCoroutine);
+                eventCoroutine = null;
+            }
+
+            // Clear event queue
+            CurrentScenarioEventsList.Clear();
+            eventIsPlaying = false;
+
+            Debug.Log("[EventTriggerSystem] Aborted all activities");
+        }
+
+        /// <summary>
         /// End the study session - Direct method call
         /// </summary>
         public void EndStudy()
         {
             Debug.Log("[EventTriggerSystem] Ending study session");
-            // It's safer to load by scene name or build index from a configuration file
-            // rather than a hardcoded index.
-            // For now, keeping the original logic.
-            SceneManager.LoadScene(0);
+            SceneManager.LoadScene(4); // Assuming scene 4 is the end scene
+        }
 
+        // ===== HELPER METHODS =====
+
+        /// <summary>
+        /// Get NPC struct by name
+        /// </summary>
+        private NPC GetNPCByName(string npcName)
+        {
+            switch (npcName.ToLower())
+            {
+                case "nurse": return nurse;
+                case "brother": return brother;
+                case "wife": return wife;
+                default:
+                    Debug.LogWarning($"[EventTriggerSystem] Unknown NPC: {npcName}");
+                    return nurse; // Default fallback
+            }
+        }
+
+        /// <summary>
+        /// Get waypoint GameObject by name
+        /// </summary>
+        private GameObject GetWaypointByName(string position)
+        {
+            switch (position.ToLower())
+            {
+                case "bedleft1": return wpBedLeft1;
+                case "bedleft2": return wpBedLeft2;
+                case "bedright1": return wpBedRight1;
+                case "doorinside": return wpDoorInside;
+                case "dooroutside": return wpDoorOutside;
+                case "outside": return wpOutside;
+                case "outsidel": return wpOutsideL;
+                default:
+                    Debug.LogWarning($"[EventTriggerSystem] Unknown position: {position}");
+                    return null;
+            }
+        }
+
+        /// <summary>
+        /// Initialize waypoint mapping for easier access
+        /// </summary>
+        void InitializeWaypoints()
+        {
+            waypoints.Clear();
+            waypoints["bedLeft1"] = wpBedLeft1;
+            waypoints["bedLeft2"] = wpBedLeft2;
+            waypoints["bedRight1"] = wpBedRight1;
+            waypoints["doorInside"] = wpDoorInside;
+            waypoints["doorOutside"] = wpDoorOutside;
+            waypoints["outside"] = wpOutside;
+            waypoints["outsideL"] = wpOutsideL;
         }
     }
 }

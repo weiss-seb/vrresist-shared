@@ -26,9 +26,11 @@ namespace OVGU.VAR.VRResist
     /// </summary>
     public enum NPCType
     {
-        patient,
-        colleague,
-        head_doctor,
+        nurse,
+        brother,    // son in original system
+        wife,       // daughter in original system  
+        doctor,
+        anesthesiologist
     }
 
     /// <summary>
@@ -45,7 +47,7 @@ namespace OVGU.VAR.VRResist
 
         [Header("NPC References")]
         [Tooltip("NPC GameObjects to get audio clips from")]
-        [SerializeField] GameObject patientGameObject;
+        [SerializeField] GameObject nurseObject;
         [SerializeField] GameObject brotherObject;
         [SerializeField] GameObject wifeObject;
         [SerializeField] GameObject doctorObject;
@@ -117,8 +119,8 @@ namespace OVGU.VAR.VRResist
             Debug.Log("[EventControl] Loading audio clips from NPC objects...");
 
             // Load audio clips for each NPC if the GameObject is assigned
-            if (patientGameObject != null)
-                nurseAudioClips = GetAudioClipsFromNPC(patientGameObject).ToArray();
+            if (nurseObject != null)
+                nurseAudioClips = GetAudioClipsFromNPC(nurseObject).ToArray();
 
             if (brotherObject != null)
                 brotherAudioClips = GetAudioClipsFromNPC(brotherObject).ToArray();
