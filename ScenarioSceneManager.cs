@@ -47,12 +47,30 @@ namespace OVGU.VAR.VRResist
         [SerializeField]
         private List<ScenarioMapping> scenarioMappings = new List<ScenarioMapping>();
 
+        void Awake()
+        {
+            tcpServer = FindFirstObjectByType<TCPServer>();
+        }
+
+
         void Start()
         {
             InitializeSceneData();
-            ShowLoadingScreen("Warten auf Szenario-Auswahl...");
 
-            DontDestroyOnLoad(this.gameObject);
+            //if the current scene isnt the waiting room, dont show the loading screen
+            if (SceneManager.GetActiveScene().name != "WaitingRoom")
+            {
+                loadingScreen.SetActive(false);
+
+            }
+            else
+            {
+                loadingScreen.SetActive(true);
+                ShowLoadingScreen("Warten auf Szenario-Auswahl...");
+            }
+
+
+            DontDestroyOnLoad(gameObject);
         }
 
         /// <summary>
