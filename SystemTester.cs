@@ -135,9 +135,9 @@ namespace OVGU.VAR.VRResist
             // Test NPC References in EventTriggerSystem
             if (eventTriggerSystem != null)
             {
-                RunTest("Nurse NPC Reference", () => eventTriggerSystem.nurseObject != null);
-                RunTest("Brother NPC Reference", () => eventTriggerSystem.brotherObject != null);
-                RunTest("Wife NPC Reference", () => eventTriggerSystem.wifeObject != null);
+                RunTest("Nurse NPC Reference", () => eventTriggerSystem.patient != null);
+                RunTest("Brother NPC Reference", () => eventTriggerSystem.colleague != null);
+                RunTest("Wife NPC Reference", () => eventTriggerSystem.head_doctor != null);
             }
 
             yield return null;

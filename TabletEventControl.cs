@@ -16,11 +16,9 @@ namespace OVGU.VAR.VRResist
     {
         [Header("System References")]
         [SerializeField] WebSocketClient webSocketClient;
-        [SerializeField] ScenarioManager scenarioManager;
-        [Tooltip("Only needed if this tablet also displays tasks locally")]
-        [SerializeField] StudyTaskManager studyTaskManager;
-
         [Header("Scenario Selection")]
+
+
         [SerializeField] TMP_Dropdown scenarioDropdown;
 
         [Header("Pre-configured UI Sections")]
@@ -30,16 +28,6 @@ namespace OVGU.VAR.VRResist
         [SerializeField] GameObject cameraActionsPanel;
         [SerializeField] GameObject studyControlPanel;
 
-        [Header("NPC Action Buttons - Assign in Unity Editor")]
-        [Tooltip("NPC Movement Buttons")]
-        [SerializeField] Button[] chefarztWalkButtons;
-        [SerializeField] Button[] kollegeWalkButtons;
-        [SerializeField] Button[] patientWalkButtons;
-
-        [Tooltip("NPC Speech Buttons - Configure with predefined audio clip names")]
-        [SerializeField] Button[] chefarztTalkButtons;
-        [SerializeField] Button[] kollegeTalkButtons;
-        [SerializeField] Button[] patientTalkButtons;
 
         [Header("Task Action Buttons - Assign in Unity Editor")]
         [SerializeField] Button showMathTaskButton;
@@ -55,71 +43,43 @@ namespace OVGU.VAR.VRResist
         [SerializeField] Button endStudyButton;
         [SerializeField] Button refreshButton;
 
-        [Header("Study Configuration")]
-        [Tooltip("Available NPC walk positions - must match button order")]
-        [SerializeField]
-        string[] availablePositions = {
-            "bedLeft1", "bedLeft2", "bedRight1", "doorInside", "doorOutside", "outside"
-        };
+        [Header("Dynamic UI Generation")]
+        [Tooltip("Button prefab for dynamically created audio buttons")]
+        [SerializeField] GameObject buttonPrefab;
+        [Tooltip("Character panel prefab with TMPro_Text, Image, and TalkButtons container")]
+        [SerializeField] GameObject characterButtonPanelPrefab;
+        [Tooltip("Parent container where character panels will be instantiated")]
+        [SerializeField] Transform characterPanelsContainer;
+        [Tooltip("Parent container for dynamically created position buttons")]
+        [SerializeField] Transform positionButtonContainer;
 
-        [Header("Dynamic Audio Configuration")]
-        [Tooltip("Audio clips and labels are loaded dynamically from ScenarioManager")]
-        [SerializeField] string[] chefarztAudioClips = new string[0];
-        [SerializeField] string[] kollegeAudioClips = new string[0];
-        [SerializeField] string[] patientAudioClips = new string[0];
-        [SerializeField] string[] chefarztAudioLabels = new string[0];
-        [SerializeField] string[] kollegeAudioLabels = new string[0];
-        [SerializeField] string[] patientAudioLabels = new string[0];
+        [SerializeField] TMP_Text[] characterNameLabels;
+        // Text fields to show NPC info - dynamically assigned based on available characters
 
         [Header("Debug Settings")]
         [SerializeField] bool enableDetailedLogging = true;
 
-        // Current scenario data
-        private ScenarioData currentScenario;
+        // Lists to keep track of dynamically created buttons for cleanup
+        private List<GameObject> dynamicAudioButtons = new List<GameObject>();
+        private List<GameObject> dynamicPositionButtons = new List<GameObject>();
+
+        // Dynamic character mapping based on JSON order
+        private Dictionary<string, int> characterToContainerIndex = new Dictionary<string, int>();
+        private Dictionary<string, Transform> characterToTalkButtonsContainer = new Dictionary<string, Transform>();
+        private List<string> availableCharacters = new List<string>();
+        private List<GameObject> dynamicCharacterPanels = new List<GameObject>();
 
         void Start()
         {
-            // Setup scenario dropdown
-            SetupScenarioDropdown();
 
-            // Setup pre-configured UI button listeners
-            SetupPreConfiguredUI();
-
-            // Request initial data from HMD
-            RequestInitialData();
         }
 
         /// <summary>
         /// Setup scenario dropdown and subscribe to scenario changes
         /// </summary>
-        void SetupScenarioDropdown()
+        public void SetupScenarioDropdown(EventMessage message)
         {
-            if (scenarioManager == null)
-            {
-                Debug.LogWarning("[TabletEventControl] ScenarioManager not assigned!");
-                return;
-            }
-
-            if (scenarioDropdown == null)
-            {
-                Debug.LogWarning("[TabletEventControl] Scenario dropdown not assigned!");
-                return;
-            }
-
-            // Subscribe to scenario changes
-            scenarioManager.OnScenarioChanged += OnScenarioChanged;
-
-            // Populate dropdown with scenario names
-            PopulateScenarioDropdown();
-
-            // Setup dropdown change listener
-            scenarioDropdown.onValueChanged.AddListener(OnScenarioDropdownChanged);
-
-            // Load initial scenario
-            if (scenarioManager.GetScenarioCount() > 0)
-            {
-                OnScenarioChanged(scenarioManager.GetCurrentScenario());
-            }
+            PopulateScenarioDropdown(message.content);
 
             if (enableDetailedLogging)
                 Debug.Log("[TabletEventControl] Scenario dropdown setup complete");
@@ -128,13 +88,24 @@ namespace OVGU.VAR.VRResist
         /// <summary>
         /// Populate scenario dropdown with available scenarios
         /// </summary>
-        void PopulateScenarioDropdown()
+        void PopulateScenarioDropdown(string[] content)
         {
-            if (scenarioDropdown == null || scenarioManager == null) return;
+            if (scenarioDropdown == null) return;
 
             scenarioDropdown.ClearOptions();
 
-            var scenarioNames = scenarioManager.GetScenarioNames();
+            //Unpack the content, odd entries are scenario ids, even entries are scenario names 
+            var scenarioNames = new List<string>();
+            for (int i = 0; i < content.Length; i += 2)
+            {
+                if (i + 1 < content.Length)
+                {
+                    var scenarioId = content[i];
+                    var scenarioName = content[i + 1];
+                    scenarioNames.Add(scenarioName);
+                }
+            }
+
             var options = new List<TMP_Dropdown.OptionData>();
 
             foreach (var name in scenarioNames)
@@ -148,79 +119,20 @@ namespace OVGU.VAR.VRResist
                 Debug.Log($"[TabletEventControl] Populated dropdown with {options.Count} scenarios");
         }
 
-        /// <summary>
-        /// Handle scenario dropdown value change
-        /// </summary>
-        void OnScenarioDropdownChanged(int scenarioIndex)
+        public void StartSelectedScenario()
         {
-            if (scenarioManager != null)
+            //Send a message to HMD to load up the selected scenario
+            if (webSocketClient != null)
             {
-                scenarioManager.SwitchToScenario(scenarioIndex);
+                var message = new EventMessage("SCENARIO_CHANGE", new string[] { (scenarioDropdown.value + 1).ToString() });
+                webSocketClient.SendEventMessage(message);
+                Debug.Log($"[TabletEventControl] Starting scenario:");
             }
-        }
-
-        /// <summary>
-        /// Handle scenario change event from ScenarioManager
-        /// </summary>
-        void OnScenarioChanged(ScenarioData newScenario)
-        {
-            if (newScenario == null)
+            else
             {
-                Debug.LogWarning("[TabletEventControl] Received null scenario data!");
-                return;
+                Debug.LogWarning("[TabletEventControl] WebSocketClient is null or no scenario selected!");
             }
 
-            currentScenario = newScenario;
-
-            if (enableDetailedLogging)
-                Debug.Log($"[TabletEventControl] Scenario changed to: {newScenario.scenarioName}");
-
-            // Update UI with new scenario data
-            UpdateUIForScenario(newScenario);
-        }
-
-        /// <summary>
-        /// Update UI elements based on current scenario
-        /// </summary>
-        void UpdateUIForScenario(ScenarioData scenario)
-        {
-            // Update available positions
-            availablePositions = scenario.availableWalkPositions ?? availablePositions;
-
-            // Update audio clips and labels for each NPC
-            UpdateNPCAudioData("chefarzt", scenario.GetAudioClipsForNPC("chefarzt"), scenario.GetAudioLabelsForNPC("chefarzt"));
-            UpdateNPCAudioData("kollege", scenario.GetAudioClipsForNPC("kollege"), scenario.GetAudioLabelsForNPC("kollege"));
-            UpdateNPCAudioData("patient", scenario.GetAudioClipsForNPC("patient"), scenario.GetAudioLabelsForNPC("patient"));
-
-            // Refresh button configurations
-            RefreshButtonConfigurations();
-
-            if (enableDetailedLogging)
-                Debug.Log($"[TabletEventControl] UI updated for scenario: {scenario.scenarioName}");
-        }
-
-        /// <summary>
-        /// Update NPC audio data for scenario
-        /// </summary>
-        void UpdateNPCAudioData(string npcName, string[] audioClips, string[] audioLabels)
-        {
-            if (audioClips == null || audioClips.Length == 0) return;
-
-            switch (npcName.ToLower())
-            {
-                case "chefarzt":
-                    chefarztAudioClips = audioClips;
-                    chefarztAudioLabels = audioLabels ?? audioClips;
-                    break;
-                case "kollege":
-                    kollegeAudioClips = audioClips;
-                    kollegeAudioLabels = audioLabels ?? audioClips;
-                    break;
-                case "patient":
-                    patientAudioClips = audioClips;
-                    patientAudioLabels = audioLabels ?? audioClips;
-                    break;
-            }
         }
 
         /// <summary>
@@ -232,9 +144,8 @@ namespace OVGU.VAR.VRResist
             ClearButtonListeners();
 
             // Re-setup all buttons with new scenario data
-            SetupNPCActionButtons();
+
             SetupTaskActionButtons();
-            SetupCameraActionButtons();
             SetupStudyControlButtons();
         }
 
@@ -243,16 +154,6 @@ namespace OVGU.VAR.VRResist
         /// </summary>
         void ClearButtonListeners()
         {
-            // Clear walk button listeners
-            ClearButtonArrayListeners(chefarztWalkButtons);
-            ClearButtonArrayListeners(kollegeWalkButtons);
-            ClearButtonArrayListeners(patientWalkButtons);
-
-            // Clear talk button listeners
-            ClearButtonArrayListeners(chefarztTalkButtons);
-            ClearButtonArrayListeners(kollegeTalkButtons);
-            ClearButtonArrayListeners(patientTalkButtons);
-
             // Clear other button listeners
             ClearButtonArrayListeners(cameraButtons);
 
@@ -284,99 +185,13 @@ namespace OVGU.VAR.VRResist
         /// <summary>
         /// Request initial data from HMD (audio clips, available positions, etc.)
         /// </summary>
-        void RequestInitialData()
+        public void RequestInitialData()
         {
             if (webSocketClient != null)
             {
                 var refreshMessage = new EventMessage("request", new string[] { "refresh" });
                 webSocketClient.SendEventMessage(refreshMessage);
                 Debug.Log("[TabletEventControl] Requested initial data from HMD");
-            }
-        }
-
-        /// <summary>
-        /// Setup pre-configured UI button listeners
-        /// This method assigns actions to buttons that are already created in the Unity Editor
-        /// </summary>
-        void SetupPreConfiguredUI()
-        {
-            Debug.Log("[TabletEventControl] Setting up pre-configured UI button listeners...");
-
-            SetupNPCActionButtons();
-            SetupTaskActionButtons();
-            SetupCameraActionButtons();
-            SetupStudyControlButtons();
-
-            Debug.Log("[TabletEventControl] Pre-configured UI setup complete!");
-        }
-
-        /// <summary>
-        /// Setup NPC action buttons - assigns listeners to pre-configured buttons
-        /// </summary>
-        void SetupNPCActionButtons()
-        {
-            // Setup walk buttons for each NPC
-            SetupWalkButtons(chefarztWalkButtons, "chefarzt");
-            SetupWalkButtons(kollegeWalkButtons, "kollege");
-            SetupWalkButtons(patientWalkButtons, "patient");
-
-            // Setup talk buttons for each NPC
-            SetupTalkButtons(chefarztTalkButtons, "chefarzt", chefarztAudioClips, chefarztAudioLabels);
-            SetupTalkButtons(kollegeTalkButtons, "kollege", kollegeAudioClips, kollegeAudioLabels);
-            SetupTalkButtons(patientTalkButtons, "patient", patientAudioClips, patientAudioLabels);
-        }
-
-        /// <summary>
-        /// Setup walk buttons for a specific NPC
-        /// </summary>
-        void SetupWalkButtons(Button[] buttons, string npcName)
-        {
-            if (buttons == null) return;
-
-            for (int i = 0; i < buttons.Length && i < availablePositions.Length; i++)
-            {
-                if (buttons[i] != null)
-                {
-                    string position = availablePositions[i];
-                    buttons[i].onClick.AddListener(() => SendNPCWalkCommand(npcName, position));
-
-                    // Update button text to show position
-                    var buttonText = buttons[i].GetComponentInChildren<TMPro.TextMeshProUGUI>();
-                    if (buttonText != null)
-                    {
-                        buttonText.text = GetFriendlyPositionName(position);
-                    }
-
-                    if (enableDetailedLogging)
-                        Debug.Log($"[TabletEventControl] Setup walk button: {npcName} → {position}");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Setup talk buttons for a specific NPC
-        /// </summary>
-        void SetupTalkButtons(Button[] buttons, string npcName, string[] audioClips, string[] audioLabels)
-        {
-            if (buttons == null || audioClips == null) return;
-
-            for (int i = 0; i < buttons.Length && i < audioClips.Length; i++)
-            {
-                if (buttons[i] != null)
-                {
-                    string audioClip = audioClips[i];
-                    buttons[i].onClick.AddListener(() => SendNPCTalkCommand(npcName, audioClip));
-
-                    // Update button text to show friendly name
-                    var buttonText = buttons[i].GetComponentInChildren<TMPro.TextMeshProUGUI>();
-                    if (buttonText != null && audioLabels != null && i < audioLabels.Length)
-                    {
-                        buttonText.text = audioLabels[i];
-                    }
-
-                    if (enableDetailedLogging)
-                        Debug.Log($"[TabletEventControl] Setup talk button: {npcName} says {audioClip}");
-                }
             }
         }
 
@@ -407,33 +222,6 @@ namespace OVGU.VAR.VRResist
         }
 
         /// <summary>
-        /// Setup camera control buttons
-        /// </summary>
-        void SetupCameraActionButtons()
-        {
-            if (cameraButtons == null) return;
-
-            for (int i = 0; i < cameraButtons.Length; i++)
-            {
-                if (cameraButtons[i] != null)
-                {
-                    int cameraIndex = i; // Capture for closure
-                    cameraButtons[i].onClick.AddListener(() => SendCameraCommand(cameraIndex));
-
-                    // Update button text
-                    var buttonText = cameraButtons[i].GetComponentInChildren<TMPro.TextMeshProUGUI>();
-                    if (buttonText != null)
-                    {
-                        buttonText.text = $"Kamera {cameraIndex + 1}";
-                    }
-
-                    if (enableDetailedLogging)
-                        Debug.Log($"[TabletEventControl] Setup camera button: Camera {cameraIndex + 1}");
-                }
-            }
-        }
-
-        /// <summary>
         /// Setup study control buttons
         /// </summary>
         void SetupStudyControlButtons()
@@ -448,7 +236,7 @@ namespace OVGU.VAR.VRResist
 
             if (endStudyButton != null)
             {
-                endStudyButton.onClick.AddListener(() => SendStudyControlCommand("END_STUDY"));
+                endStudyButton.onClick.AddListener(() => SendStudyControlCommand("END_SCENE"));
 
                 var buttonText = endStudyButton.GetComponentInChildren<TMPro.TextMeshProUGUI>();
                 if (buttonText != null) buttonText.text = "Studie Beenden";
@@ -461,16 +249,6 @@ namespace OVGU.VAR.VRResist
                 var buttonText = refreshButton.GetComponentInChildren<TMPro.TextMeshProUGUI>();
                 if (buttonText != null) buttonText.text = "Aktualisieren";
             }
-        }
-
-        /// <summary>
-        /// Send NPC walk command to HMD
-        /// </summary>
-        void SendNPCWalkCommand(string npcName, string position)
-        {
-            var message = new EventMessage("NPC_WALK", new string[] { npcName, position });
-            SendMessageToHMD(message);
-            Debug.Log($"[TabletEventControl] Sent NPC_WALK: {npcName} to {position}");
         }
 
         /// <summary>
@@ -496,11 +274,24 @@ namespace OVGU.VAR.VRResist
         /// <summary>
         /// Send camera change command to HMD
         /// </summary>
-        void SendCameraCommand(int cameraIndex)
+        public void SendCameraCommand(int cameraIndex)
         {
             var message = new EventMessage("changeCamera", new string[] { cameraIndex.ToString() });
             SendMessageToHMD(message);
             Debug.Log($"[TabletEventControl] Sent changeCamera to index: {cameraIndex}");
+        }
+
+        void SendCameraStreamRequest()
+        {
+            if (webSocketClient != null)
+            {
+                //Todo: Send a request to the HMD to start the camera stream
+                Debug.Log("[TabletEventControl] Requested camera stream from HMD");
+            }
+            else
+            {
+                Debug.LogWarning("[TabletEventControl] WebSocketClient is null, cannot request camera stream!");
+            }
         }
 
         /// <summary>
@@ -548,8 +339,10 @@ namespace OVGU.VAR.VRResist
         /// <summary>
         /// Handle incoming messages from HMD (if needed for tablet display updates)
         /// </summary>
-        public void OnMessageReceived(EventMessage message)
+        public void OnMessageReceived(string msg)
         {
+            EventMessage message = JsonUtility.FromJson<EventMessage>(msg);
+
             if (enableDetailedLogging)
                 Debug.Log($"[TabletEventControl] Received message: {message.type}");
 
@@ -564,12 +357,20 @@ namespace OVGU.VAR.VRResist
                 case "audioClipsListPatient":
                     // Update patient audio clips if needed
                     break;
-                case "taskList":
-                    // Update task display if this tablet also shows tasks
-                    if (studyTaskManager != null)
-                    {
-                        // Handle task list updates
-                    }
+                case "scenarioUpdate":
+                    break;
+                case "scenarioList":
+                    Debug.Log("[TabletEventControl] Received scenario list update");
+                    SetupScenarioDropdown(message);
+                    break;
+                case "SCENE_LOADED":
+                    SendCameraStreamRequest();
+                    RequestStudySetup();
+                    Debug.Log("[TabletEventControl] Scene loaded, requesting camera stream");
+                    break;
+                case "STUDY_SETUP_RESPONSE":
+                    Debug.Log("[TabletEventControl] Received study setup response");
+                    HandleStudySetupResponse(message);
                     break;
                 default:
                     // Handle other message types as needed
@@ -578,24 +379,381 @@ namespace OVGU.VAR.VRResist
         }
 
         /// <summary>
-        /// Update audio clip arrays from HMD data (if dynamic updates are needed)
+        /// Handle study setup response from HMD - creates dynamic UI
         /// </summary>
-        public void UpdateAudioClips(string npcName, string[] audioClips)
+        void HandleStudySetupResponse(EventMessage message)
         {
-            switch (npcName.ToLower())
+            if (message.content == null || message.content.Length == 0)
             {
-                case "chefarzt":
-                    chefarztAudioClips = audioClips;
-                    break;
-                case "kollege":
-                    kollegeAudioClips = audioClips;
-                    break;
-                case "patient":
-                    patientAudioClips = audioClips;
-                    break;
+                Debug.LogError("[TabletEventControl] Study setup response is empty!");
+                return;
             }
 
-            Debug.Log($"[TabletEventControl] Updated audio clips for {npcName}: {audioClips.Length} clips");
+            foreach (var item in message.content)
+            {
+                Debug.Log($"[TabletEventControl] Study setup content: {item}");
+            }
+
+            try
+            {
+                // Parse the JSON data from the response
+                string jsonData = message.content[0];
+                StudySetupData setupData = JsonUtility.FromJson<StudySetupData>(jsonData);
+
+                if (setupData == null)
+                {
+                    Debug.LogError("[TabletEventControl] Failed to parse study setup data!");
+                    return;
+                }
+
+                // Clear existing dynamic buttons and mappings
+                ClearDynamicButtons();
+                ClearCharacterMappings();
+
+                // Build character mapping based on JSON order
+                BuildCharacterMappings(setupData.npcs);
+
+                // Create dynamic UI for each NPC
+                foreach (var npc in setupData.npcs)
+                {
+                    CreateNPCButtons(npc);
+                }
+
+                // Create position buttons
+                CreatePositionButtons(setupData.positions);
+
+                if (enableDetailedLogging)
+                    Debug.Log($"[TabletEventControl] Created dynamic UI for {setupData.npcs.Length} NPCs and {setupData.positions.Length} positions");
+            }
+            catch (System.Exception e)
+            {
+                Debug.LogError($"[TabletEventControl] Error handling study setup response: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Create dynamic buttons for an NPC
+        /// </summary>
+        void CreateNPCButtons(NPCData npcData)
+        {
+            Transform container = GetNPCContainer(npcData.name);
+            if (container == null)
+            {
+                Debug.LogWarning($"[TabletEventControl] No container found for NPC: {npcData.name}");
+                return;
+            }
+
+            // Create buttons for each audio file (character name is already set in the CharacterButtonPanel)
+            foreach (var audioFile in npcData.audioFiles)
+            {
+                CreateAudioButton(container, npcData.name, audioFile.clipName, audioFile.label);
+            }
+
+
+            if (enableDetailedLogging)
+                Debug.Log($"[TabletEventControl] Created {npcData.audioFiles.Length} buttons for {npcData.displayName}");
+        }
+
+        /// <summary>
+        /// Create a button for an audio file
+        /// </summary>
+        void CreateAudioButton(Transform container, string npcName, string clipName, string label)
+        {
+            if (buttonPrefab == null)
+            {
+                Debug.LogError("[TabletEventControl] Button prefab is not assigned!");
+                return;
+            }
+
+            GameObject buttonObj = Instantiate(buttonPrefab, container);
+            Button button = buttonObj.GetComponent<Button>();
+
+            if (button == null)
+            {
+                Debug.LogError("[TabletEventControl] Button prefab doesn't have a Button component!");
+                Destroy(buttonObj);
+                return;
+            }
+
+            // Set button text
+            var buttonText = button.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+            if (buttonText != null)
+            {
+                buttonText.text = label;
+            }
+
+            // Add click listener
+            button.onClick.AddListener(() => SendNPCTalkCommand(npcName, clipName));
+
+            // Track the button for cleanup
+            dynamicAudioButtons.Add(buttonObj);
+
+            if (enableDetailedLogging)
+                Debug.Log($"[TabletEventControl] Created audio button: {npcName} - {label}");
+        }
+
+        /// <summary>
+        /// Create an NPC label
+        /// </summary>
+        void CreateNPCLabel(Transform container, string displayName)
+        {
+            // Create a simple text object for the NPC name
+            GameObject labelObj = new GameObject($"{displayName}_Label");
+            labelObj.transform.SetParent(container, false);
+
+            // Add TextMeshPro component
+            var textComponent = labelObj.AddComponent<TMPro.TextMeshProUGUI>();
+            textComponent.text = displayName;
+            textComponent.fontSize = 18;
+            textComponent.fontStyle = TMPro.FontStyles.Bold;
+            textComponent.alignment = TMPro.TextAlignmentOptions.Center;
+
+            // Add to cleanup list
+            dynamicAudioButtons.Add(labelObj);
+        }
+
+        /// <summary>
+        /// Create buttons for available positions
+        /// </summary>
+        void CreatePositionButtons(string[] positions)
+        {
+            if (positionButtonContainer == null || positions == null)
+                return;
+
+            foreach (string position in positions)
+            {
+                CreatePositionButton(position);
+            }
+        }
+
+        /// <summary>
+        /// Create a button for a position
+        /// </summary>
+        void CreatePositionButton(string position)
+        {
+            if (buttonPrefab == null || positionButtonContainer == null)
+                return;
+
+            GameObject buttonObj = Instantiate(buttonPrefab, positionButtonContainer);
+            Button button = buttonObj.GetComponent<Button>();
+
+            if (button == null)
+            {
+                Destroy(buttonObj);
+                return;
+            }
+
+            // Set button text
+            var buttonText = button.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+            if (buttonText != null)
+            {
+                buttonText.text = GetFriendlyPositionName(position);
+            }
+
+            // Add click listener - for now just log, you can extend this later
+            button.onClick.AddListener(() => Debug.Log($"Position selected: {position}"));
+
+            // Track the button for cleanup
+            dynamicPositionButtons.Add(buttonObj);
+        }
+
+        /// <summary>
+        /// Get the talk buttons container for a specific NPC
+        /// </summary>
+        Transform GetNPCContainer(string npcName)
+        {
+            if (characterToTalkButtonsContainer.TryGetValue(npcName, out Transform container))
+            {
+                return container;
+            }
+
+            if (enableDetailedLogging)
+                Debug.LogWarning($"[TabletEventControl] No talk buttons container found for NPC: {npcName}");
+
+            return null;
+        }
+
+        /// <summary>
+        /// Clear all dynamically created buttons
+        /// </summary>
+        void ClearDynamicButtons()
+        {
+            // Clear audio buttons
+            foreach (var button in dynamicAudioButtons)
+            {
+                if (button != null)
+                    DestroyImmediate(button);
+            }
+            dynamicAudioButtons.Clear();
+
+            // Clear position buttons
+            foreach (var button in dynamicPositionButtons)
+            {
+                if (button != null)
+                    DestroyImmediate(button);
+            }
+            dynamicPositionButtons.Clear();
+
+            if (enableDetailedLogging)
+                Debug.Log("[TabletEventControl] Cleared all dynamic buttons");
+        }
+
+        /// <summary>
+        /// Clear character mappings
+        /// </summary>
+        void ClearCharacterMappings()
+        {
+            characterToContainerIndex.Clear();
+            availableCharacters.Clear();
+
+            // Clear character panels
+            ClearCharacterPanels();
+
+            // Clear character name labels
+            if (characterNameLabels != null)
+            {
+                foreach (var label in characterNameLabels)
+                {
+                    if (label != null)
+                        label.text = "";
+                }
+            }
+
+            if (enableDetailedLogging)
+                Debug.Log("[TabletEventControl] Cleared character mappings");
+        }
+
+        /// <summary>
+        /// Build character mappings based on JSON order - creates CharacterButtonPanel prefabs
+        /// </summary>
+        void BuildCharacterMappings(NPCData[] npcs)
+        {
+            if (npcs == null || characterButtonPanelPrefab == null || characterPanelsContainer == null)
+            {
+                Debug.LogError("[TabletEventControl] Missing required prefab or container for character panels!");
+                return;
+            }
+
+            // Clear existing character panels
+            ClearCharacterPanels();
+
+            for (int i = 0; i < npcs.Length; i++)
+            {
+                string characterName = npcs[i].name;
+                string displayName = npcs[i].displayName;
+
+                // Instantiate CharacterButtonPanel prefab
+                GameObject characterPanel = Instantiate(characterButtonPanelPrefab, characterPanelsContainer);
+                dynamicCharacterPanels.Add(characterPanel);
+
+                // Find the TMPro_Text component and set character name
+                TMP_Text nameText = characterPanel.GetComponentInChildren<TMP_Text>();
+                if (nameText != null)
+                {
+                    nameText.text = displayName;
+                }
+                else
+                {
+                    Debug.LogWarning($"[TabletEventControl] No TMP_Text found in CharacterButtonPanel for {characterName}");
+                }
+
+                // Find the TalkButtons container (should be a child with name "TalkButtons")
+                Transform talkButtonsContainer = characterPanel.transform.Find("Buttonpanel/TalkButtons");
+                if (talkButtonsContainer == null)
+                {
+                    // Try alternative path structures
+                    talkButtonsContainer = characterPanel.transform.Find("TalkButtons");
+                    if (talkButtonsContainer == null)
+                    {
+                        // Search recursively for any Transform with "TalkButtons" in the name
+                        talkButtonsContainer = FindChildRecursive(characterPanel.transform, "TalkButtons");
+                    }
+                }
+
+                if (talkButtonsContainer != null)
+                {
+                    // Store mapping
+                    availableCharacters.Add(characterName);
+                    characterToContainerIndex[characterName] = i;
+                    characterToTalkButtonsContainer[characterName] = talkButtonsContainer;
+
+                    if (enableDetailedLogging)
+                        Debug.Log($"[TabletEventControl] Created character panel for '{characterName}' ({displayName}) with TalkButtons container");
+                }
+                else
+                {
+                    Debug.LogError($"[TabletEventControl] Could not find TalkButtons container in CharacterButtonPanel for {characterName}");
+                }
+            }
+
+            if (enableDetailedLogging)
+                Debug.Log($"[TabletEventControl] Built character mappings for {availableCharacters.Count} characters using CharacterButtonPanel prefabs");
+        }
+
+        /// <summary>
+        /// Recursively find a child transform by name
+        /// </summary>
+        Transform FindChildRecursive(Transform parent, string childName)
+        {
+            foreach (Transform child in parent)
+            {
+                if (child.name.Contains(childName))
+                    return child;
+
+                Transform found = FindChildRecursive(child, childName);
+                if (found != null)
+                    return found;
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Clear all dynamically created character panels
+        /// </summary>
+        void ClearCharacterPanels()
+        {
+            foreach (var panel in dynamicCharacterPanels)
+            {
+                if (panel != null)
+                    Destroy(panel);
+            }
+            dynamicCharacterPanels.Clear();
+            characterToTalkButtonsContainer.Clear();
+
+            if (enableDetailedLogging)
+                Debug.Log("[TabletEventControl] Cleared all character panels");
+        }
+
+        public void SetNextInfoText()
+        {
+            if (webSocketClient != null)
+            {
+                var message = new EventMessage("SET_INFO_TEXT", new string[] { });
+                webSocketClient.SendEventMessage(message);
+                Debug.Log("[TabletEventControl] Requested study setup from HMD");
+            }
+            else
+            {
+                Debug.LogWarning("[TabletEventControl] WebSocketClient is null!");
+            }
+
+        }
+
+        /// <summary>
+        /// Request study setup from HMD
+        /// </summary>
+        public void RequestStudySetup()
+        {
+            if (webSocketClient != null)
+            {
+                var message = new EventMessage("REQUEST_STUDY_SETUP", new string[] { });
+                webSocketClient.SendEventMessage(message);
+                Debug.Log("[TabletEventControl] Requested study setup from HMD");
+            }
+            else
+            {
+                Debug.LogWarning("[TabletEventControl] WebSocketClient is null!");
+            }
         }
 
         /// <summary>
@@ -614,5 +772,28 @@ namespace OVGU.VAR.VRResist
 
             Debug.Log($"[TabletEventControl] UI State - NPC: {npcActionsEnabled}, Tasks: {taskActionsEnabled}, Camera: {cameraActionsEnabled}");
         }
+    }
+
+    // Data structures for JSON parsing
+    [System.Serializable]
+    public class StudySetupData
+    {
+        public NPCData[] npcs;
+        public string[] positions;
+    }
+
+    [System.Serializable]
+    public class NPCData
+    {
+        public string name;
+        public string displayName;
+        public AudioFileData[] audioFiles;
+    }
+
+    [System.Serializable]
+    public class AudioFileData
+    {
+        public string clipName;
+        public string label;
     }
 }
