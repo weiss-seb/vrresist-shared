@@ -250,12 +250,16 @@ namespace OVGU.VAR.VRResist
             patientNPC = new NPC(patient);
             colleagueNPC = new NPC(colleague);
             head_doctorNPC = new NPC(head_doctor);
+            fatherNPC = new NPC(family_father);
+            motherNPC = new NPC(family_mother);
 
             if (enableDetailedLogging)
             {
                 Debug.Log($"[EventTriggerSystem] Initialized NPCs - Patient: {(patientNPC.contr != null ? "OK" : "MISSING")}, " +
                          $"Colleague: {(colleagueNPC.contr != null ? "OK" : "MISSING")}, " +
-                         $"Head Doctor: {(head_doctorNPC.contr != null ? "OK" : "MISSING")}");
+                         $"Head Doctor: {(head_doctorNPC.contr != null ? "OK" : "MISSING")}) + " +
+                         $"Father: {(fatherNPC.contr != null ? "OK" : "MISSING")}, " +
+                         $"Mother: {(motherNPC.contr != null ? "OK" : "MISSING")}");
             }
         }
 
@@ -297,6 +301,8 @@ namespace OVGU.VAR.VRResist
                     //  orderedEventList[2] = audioClipNames.ToList();
                     break;
                 case "family_father":
+                    break;
+                case "family_mother":
                     break;
 
                 default:
@@ -438,7 +444,7 @@ namespace OVGU.VAR.VRResist
             NPC npc = GetNPCByName(npcName);
             if (npc.contr != null && npc.locom != null)
             {
-                npc.contr.Speak(audioClip);
+                npc.contr.Speak(audioClip, scenarioData.GetAnimationStyleForAudio(npcName, audioClip));
                 npc.locom.lookAt(me);
                 npc.locom.setTurnTarget(me);
 
@@ -564,6 +570,10 @@ namespace OVGU.VAR.VRResist
                 case "head_doctor":
                 case "chefarzt": // Added alias for consistency
                     return head_doctorNPC;
+                case "father":
+                    return fatherNPC;
+                case "mother":
+                    return motherNPC;
                 default:
                     Debug.LogWarning($"[EventTriggerSystem] Unknown NPC: {npcName}");
                     return new NPC(); // Return an empty NPC struct to avoid null issues
