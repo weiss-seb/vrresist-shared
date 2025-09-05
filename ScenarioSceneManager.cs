@@ -6,6 +6,7 @@ using UnityEngine.Events;
 using System;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using Unity.Services.Lobbies.Models;
 
 namespace OVGU.VAR.VRResist
 {
@@ -105,8 +106,8 @@ namespace OVGU.VAR.VRResist
 
             if (scenarioId < 0 || scenarioId >= scenarioScenes.Length)
             {
-                Debug.LogError($"[ScenarioSceneManager] Invalid scenario ID: {scenarioId}");
-                return;
+                Debug.LogError($"[ScenarioSceneManager] Invalid scenario ID: {scenarioId}, defaulting to waiting room");
+                LoadWaitingRoomScene();
             }
 
             var sceneData = scenarioScenes[scenarioId - 1]; //Numbering of Scenario IDs begins at 1
@@ -122,12 +123,58 @@ namespace OVGU.VAR.VRResist
             StartCoroutine(LoadSceneCoroutine(sceneData, GetScenarioHelpText(scenarioId)));
         }
 
+        internal void LoadWaitingRoomScene()
+        {
+            if (isLoading)
+            {
+                Debug.LogWarning("[ScenarioSceneManager] Already loading a scene, ignoring request");
+                return;
+            }
+
+            var waitingRoomScene = new ScenarioSceneData
+            {
+                scenarioId = 0,
+                scenarioName = "Warteraum",
+                sceneName = "WaitingRoom",
+                loadingMessage = "Lade Warteraum...",
+                scenarioInfoTexts = new string[] { "Sie befinden sich im Warteraum.\nBitte warten Sie auf Anweisungen der Studienleitung." }
+            };
+
+            StartCoroutine(LoadSceneCoroutine(waitingRoomScene, waitingRoomScene.scenarioInfoTexts[0]));
+        }
+
+        public void LoadQuestionnaireScene()
+        {
+            Debug.Log("[ScenarioSceneManager] Loading Questionnaire Scene");
+
+            //Save current scenario id
+            PlayerPrefs.SetInt("LastScenarioId", currentScenarioId);
+            PlayerPrefs.Save();
+
+
+            var questionnaireScene = new ScenarioSceneData
+            {
+                scenarioId = 888, //Special ID for questionnaire scene
+                scenarioName = "Fragebogen",
+                sceneName = "QuestionnaireScene",
+                loadingMessage = "Lade Fragebogen...",
+                scenarioInfoTexts = new string[] { "Bitte beantworten Sie die Fragen, indem sie mit der Triggertaste des Controllers die Schieberegler bedienen und auf eine der Schaltflächen klicken." }
+            };
+
+            StartCoroutine(LoadSceneCoroutine(questionnaireScene, questionnaireScene.scenarioInfoTexts[0]));
+        }
+
         public string GetScenarioHelpText(int scenarioId)
         {
             if (scenarioId < 0 || scenarioId >= scenarioScenes.Length)
             {
                 Debug.LogError($"[ScenarioSceneManager] Invalid scenario ID: {scenarioId}");
                 return "Keine Informationen für dieses Szenario verfügbar.";
+            }
+
+            if (scenarioId == 888) //Questionnaire Scene
+            {
+                return "Bitte beantworten Sie die Fragen auf dem Tablet.";
             }
 
             var sceneData = scenarioScenes[scenarioId];
@@ -383,8 +430,6 @@ namespace OVGU.VAR.VRResist
             }
             return sceneInfoList.ToArray();
         }
-
-
     }
 }
 

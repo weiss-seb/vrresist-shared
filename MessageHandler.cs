@@ -182,7 +182,8 @@ namespace OVGU.VAR.VRResist
                    messageType == "END_STUDY" ||
                    messageType == "REQUEST_STUDY_SETUP" ||
                    messageType == "SCENARIO_CHANGE" ||
-                   messageType == "SET_INFO_TEXT";
+                   messageType == "SET_INFO_TEXT" ||
+                   messageType == "OPEN_QUESTIONNAIRE";
         }
 
         /// <summary>
@@ -242,13 +243,23 @@ namespace OVGU.VAR.VRResist
                     break;
                 case "SET_INFO_TEXT":
                     HandleSetInfoText(msg);
+                    break;
 
+                case "OPEN_QUESTIONNAIRE":
+                    HandleOpenQuestionnaire(msg);
                     break;
 
                 default:
                     Debug.LogWarning($"[MessageHandler] Unknown core action type: {msg.type}");
                     break;
             }
+        }
+
+        private void HandleOpenQuestionnaire(EventMessage msg)
+        {
+            Debug.Log("[MessageHandler] Opening Questionnaire Scene");
+
+            scenarioSceneManager.LoadQuestionnaireScene();
         }
 
         private void HandleSetInfoText(EventMessage msg)
@@ -315,7 +326,6 @@ namespace OVGU.VAR.VRResist
                 case "request":
                     HandleRequest(msg);
                     break;
-
 
                 //TODO: put nback and math task handling here
                 case "task":
@@ -587,6 +597,8 @@ namespace OVGU.VAR.VRResist
         /// </summary>
         private void HandleRequest(EventMessage msg)
         {
+
+            //TODO This is fired 4 times when the app starts, why?
             if (msg.content.Length > 0 && msg.content[0] == "refresh")
             {
                 Debug.Log("[MessageHandler] Handling refresh request");
@@ -597,8 +609,6 @@ namespace OVGU.VAR.VRResist
                     var sceneInfo = scenarioSceneManager.GetAllSceneInfo();
                     SendEventMessageToClient(new EventMessage("scenarioList", sceneInfo));
                 }
-
-
 
             }
         }
