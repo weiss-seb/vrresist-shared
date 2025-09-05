@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using System;
 
 namespace OVGU.VAR.VRResist
 {
@@ -20,6 +21,7 @@ namespace OVGU.VAR.VRResist
 
 
         [SerializeField] TMP_Dropdown scenarioDropdown;
+        [SerializeField] Text participantIDText;
 
         [Header("Pre-configured UI Sections")]
         [Tooltip("UI Panels - configure these in Unity Editor with pre-made buttons")]
@@ -41,7 +43,7 @@ namespace OVGU.VAR.VRResist
         [Header("Study Control Buttons - Assign in Unity Editor")]
         [SerializeField] Button abortAllButton;
         [SerializeField] Button endStudyButton;
-        [SerializeField] Button refreshButton;
+        [SerializeField] Button questionnaireButton;
 
         [Header("Dynamic UI Generation")]
         [Tooltip("Button prefab for dynamically created audio buttons")]
@@ -71,7 +73,7 @@ namespace OVGU.VAR.VRResist
 
         void Start()
         {
-
+            SetupStudyControlButtons();
         }
 
         /// <summary>
@@ -80,6 +82,8 @@ namespace OVGU.VAR.VRResist
         public void SetupScenarioDropdown(EventMessage message)
         {
             PopulateScenarioDropdown(message.content);
+
+
 
             if (enableDetailedLogging)
                 Debug.Log("[TabletEventControl] Scenario dropdown setup complete");
@@ -121,6 +125,8 @@ namespace OVGU.VAR.VRResist
 
         public void StartSelectedScenario()
         {
+
+
             //Send a message to HMD to load up the selected scenario
             if (webSocketClient != null)
             {
@@ -133,21 +139,29 @@ namespace OVGU.VAR.VRResist
                 Debug.LogWarning("[TabletEventControl] WebSocketClient is null or no scenario selected!");
             }
 
+            StudyLogger.Instance.WriteLineToLog("Changing to Scenario: " + (scenarioDropdown.value + 1).ToString());
+
         }
 
-        /// <summary>
-        /// Refresh all button configurations after scenario change
-        /// </summary>
-        void RefreshButtonConfigurations()
+        public void SetParticipantID()
         {
-            // Clear existing button listeners
-            ClearButtonListeners();
-
-            // Re-setup all buttons with new scenario data
-
-            SetupTaskActionButtons();
-            SetupStudyControlButtons();
+            PlayerPrefs.SetInt("CurrentParticipantID", int.Parse(participantIDText.text));
+            PlayerPrefs.Save();
         }
+
+        //    /// <summary> 
+        //     /// Refresh all button configurations after scenario change
+        //     /// </summary>
+        //     void RefreshButtonConfigurations()
+        //     {
+        //         // Clear existing button listeners
+        //         ClearButtonListeners();
+
+        //         // Re-setup all buttons with new scenario data
+
+        //         SetupTaskActionButtons();
+        //         SetupStudyControlButtons();
+        //     }
 
         /// <summary>
         /// Clear all existing button listeners
@@ -163,7 +177,7 @@ namespace OVGU.VAR.VRResist
             if (hideNBackTaskButton != null) hideNBackTaskButton.onClick.RemoveAllListeners();
             if (abortAllButton != null) abortAllButton.onClick.RemoveAllListeners();
             if (endStudyButton != null) endStudyButton.onClick.RemoveAllListeners();
-            if (refreshButton != null) refreshButton.onClick.RemoveAllListeners();
+            if (questionnaireButton != null) questionnaireButton.onClick.RemoveAllListeners();
         }
 
         /// <summary>
@@ -242,12 +256,14 @@ namespace OVGU.VAR.VRResist
                 if (buttonText != null) buttonText.text = "Studie Beenden";
             }
 
-            if (refreshButton != null)
-            {
-                refreshButton.onClick.AddListener(() => SendStudyControlCommand("refresh"));
 
-                var buttonText = refreshButton.GetComponentInChildren<TMPro.TextMeshProUGUI>();
-                if (buttonText != null) buttonText.text = "Aktualisieren";
+            //TODO USe this to open the questionnaore scene on the headset
+            if (questionnaireButton != null)
+            {
+                questionnaireButton.onClick.AddListener(() => SendStudyControlCommand("OPEN_QUESTIONNAIRE"));
+
+                var buttonText = questionnaireButton.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+                buttonText.text = "Fragebogen öffnen";
             }
         }
 
@@ -394,6 +410,10 @@ namespace OVGU.VAR.VRResist
                 Debug.Log($"[TabletEventControl] Study setup content: {item}");
             }
 
+            //save currently open scenario in playerprefs
+            PlayerPrefs.SetString("CurrentScenario", scenarioDropdown.options[scenarioDropdown.value].text);
+            PlayerPrefs.Save();
+
             try
             {
                 // Parse the JSON data from the response
@@ -484,6 +504,7 @@ namespace OVGU.VAR.VRResist
 
             // Add click listener
             button.onClick.AddListener(() => SendNPCTalkCommand(npcName, clipName));
+            button.onClick.AddListener(() => StudyLogger.Instance.WriteLineToLog($"NPC_TALK: {npcName} - {clipName}"));
 
             // Track the button for cleanup
             dynamicAudioButtons.Add(buttonObj);

@@ -143,20 +143,6 @@ public class WebSocketClient : MonoBehaviour
         }
     }
 
-    private void Start()
-    {
-        OnConnected.AddListener(SendInitialRequest);
-        Debug.Log("[WSClient] WebSocket Client started. Waiting for discovery...");
-    }
-
-    private void SendInitialRequest(string ip)
-    {
-        Debug.Log("[WSClient] Sending initial requests...");
-        EventMessage refreshMsg = new EventMessage("request", new string[] { "refresh" });
-        SendEventMessage(refreshMsg);
-
-    }
-
     public void SendChatMessage(string message)
     {
         Debug.Log("[WSClient] Preparing chat message: " + message);
