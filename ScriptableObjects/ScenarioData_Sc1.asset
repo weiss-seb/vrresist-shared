@@ -1,0 +1,92 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ed04d7a4526f8f4b8dbeb12f73e7866, type: 3}
+  m_Name: ScenarioData_Sc1
+  m_EditorClassIdentifier: 
+  scenarioId: 1
+  scenarioName: Der kritische Patient
+  scenarioDescription: 
+  scenarioInfoTexts:
+  - "Der folgende Patient hat eine symptomatische Leistenhernie rechts und stellt
+    sich in der Sprechstunde zur Beratung und Planung bzgl. einer Operation vor.
+    Es liegen Ihnen keine weiteren Befunde vor. Bevor Sie zum Patienten ins Zimmer
+    gegangen sind, hat der Oberarzt mitgeteilt, dass er in einer wichtigen Konferenz
+    ist und daher nicht gest\xF6rt werden darf.\u201C"
+  - Diese Informationen liegen Ihnen nicht vor und Ihr Wissenstand zur minimalinvasiven
+    Hernienversorgung ist begrenzt, da Sie sich noch ganz am Anfang Ihrer Ausbildung
+    befinden.
+  - Diese Information liegt Ihnen nicht vor.
+  sceneName: scenario1scene
+  chefarztAudioClips: []
+  chefarztAudioLabels: []
+  chefarztTalkEmotions: 
+  kollegeAudioClips: []
+  kollegeAudioLabels: []
+  kollegeTalkEmotions: 
+  patientAudioClips:
+  - endlichKommtJemand
+  - spracheVerschlagen
+  - vielZuJung
+  - zurSacheKommen
+  - woOberarzt
+  - minimalInvasivBitte
+  - wasEmpfehlenSieMir
+  - wasFuerBefunde
+  - nichtVonIhnenUntersuchen
+  - welchesVerfahrenEmpfehlenSie
+  - sieHabenKeineAhnung
+  - allesDilletanten
+  - sieKoennenNichtHelfen
+  - ichWerdeMichBeschweren
+  patientAudioLabels:
+  - 1) Endlich kommt jemand!
+  - 2a) Sprache verschlagen?
+  - 2b ) Sie sind zu jung!
+  - 2c) Nicht den ganzen Tag Zeit!
+  - 3a) Wo ist der Oberarzt?
+  - 3b) Minimalinvasiver Eingriff gewuenscht
+  - 4) Was ist Ihre Empfehlung?
+  - 5a) Was fuer Befunde?
+  - 6a) Sie haben keine Ahnung!
+  - 6b) Welches Verfahren empfehlen Sie?
+  - 7b) Sie untersuchen mich nicht!
+  - 7n) Alles Scheisse! Sie haben keine Ahnung!
+  - "8ab) Sie k\xF6nnen mir nicht helfen!"
+  - 8c) Ich werde mich beschweren!
+  patientTalkEmotions: 0300000002000000030000000200000002000000070000000600000007000000020000000200000002000000060000000000000006000000
+  fatherAudioClips: []
+  fatherAudioLabels: []
+  fatherTalkEmotions: 
+  motherAudioClips: []
+  motherAudioLabels: []
+  motherTalkEmotions: 
+  characterNames:
+  - Patient
+  characterTags:
+  - Patient
+  availablePositions: []
+  cameraTags: []
+  loadingImage: {fileID: 0}
+  loadingTip: 
+  messages:
+  - "\u201EDer folgende Patient hat eine symptomatische Leistenhernie rechts und
+    stellt sich in der Sprechstunde zur Beratung und Planung bzgl. einer Operation
+    vor. Es liegen Ihnen keine weiteren Befunde vor. Bevor Sie zum Patienten ins
+    Zimmer gegangen sind, hat der Oberarzt mitgeteilt, dass er in einer wichtigen
+    Konferenz ist und daher nicht gest\xF6rt werden darf.\u201C  "
+  - "\u201EDiese Informationen liegen Ihnen nicht vor und Ihr Wissenstand zur minimalinvasiven
+    Hernienversorgung ist begrenzt, da Sie sich noch ganz am Anfang Ihrer Ausbildung
+    befinden.\u201C"
+  - "\u201EDiese Information liegt Ihnen nicht vor.\u201C"
+  - "Wenn 2.: \u201EOhne ausf\xFChrliche Anamnese und k\xF6rperliche Untersuchung
+    k\xF6nnen Sie diese Frage nicht beantworten.\u201C  "
+  audioMessages: []

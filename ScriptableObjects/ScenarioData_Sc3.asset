@@ -1,0 +1,74 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ed04d7a4526f8f4b8dbeb12f73e7866, type: 3}
+  m_Name: ScenarioData_Sc3
+  m_EditorClassIdentifier: 
+  scenarioId: 3
+  scenarioName: "Das Mitarbeitergespr\xE4ch"
+  scenarioDescription: 
+  scenarioInfoTexts: []
+  sceneName: scenario3scene
+  chefarztAudioClips:
+  - AssistentenSelbstEinschaetzung
+  - LeistungNIchtUeberzeugend
+  - DecktSichNicht
+  - EigenUndFremdwahrnehmung
+  - IchBinAuchEnttauescht
+  - ZuSpaetImTumorBoard
+  - SchlechtesZeitManagement
+  - SchuldNichtWoandersSuchen
+  - IchWillTatenSehen
+  - TutNichtsZurSacbe
+  - HatEsIhnenDieSpracheVerschlagen
+  - MindestanforderungenErfuellt
+  chefarztAudioLabels:
+  - "1) Wie ist Ihre Selbsteinsch\xE4tzung"
+  - "2a) Ihre Leistung \xFCberzeugt noch nicht"
+  - 2b) Das deckt sich nicht mit meinem Bild
+  - 3a) Eigen- und Fremdwahrnehmung gehen auseinander
+  - "3b) Ich bin auch entt\xE4uscht"
+  - "4) Zu sp\xE4t im Tumorboard!"
+  - 5a) Einfach schlechtes Zeitmanagement!
+  - 5b) Die Schuld nicht bei anderen suchen!
+  - 6a) Ich will Taten sehen!
+  - '6b) Das tut nichts zur Sache! '
+  - 6c) Sprache verschlagen?
+  - 7) Gerade mal Mindestanforderungen!
+  chefarztTalkEmotions: 040000000700000003000000030000000500000002000000020000000300000008000000020000000300000007000000
+  kollegeAudioClips: []
+  kollegeAudioLabels: []
+  kollegeTalkEmotions: 
+  patientAudioClips: []
+  patientAudioLabels: []
+  patientTalkEmotions: 
+  fatherAudioClips: []
+  fatherAudioLabels: []
+  fatherTalkEmotions: 
+  motherAudioClips: []
+  motherAudioLabels: []
+  motherTalkEmotions: 
+  characterNames:
+  - Chefarzt
+  characterTags:
+  - chefarzt
+  availablePositions: []
+  cameraTags: []
+  loadingImage: {fileID: 0}
+  loadingTip: 
+  messages:
+  - "Sie haben heute Ihr erstes Mitarbeitergespr\xE4ch. Sie sind nun seit einem Jahr
+    hier in der Klinik, an ihrer Wunschstelle, und haben das Gef\xFChl sich gut eingelebt
+    zu haben. Sie sind trotzdem etwas aufgeregt, weil Ihr Chef immer einen distanzierten
+    Eindruck macht."
+  - "Sie k\xF6nnen sich an keine Hinweise erinnern!"
+  audioMessages:
+  - 

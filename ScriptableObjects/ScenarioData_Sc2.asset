@@ -1,0 +1,93 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ed04d7a4526f8f4b8dbeb12f73e7866, type: 3}
+  m_Name: ScenarioData_Sc2
+  m_EditorClassIdentifier: 
+  scenarioId: 2
+  scenarioName: "Die kritischen Angeh\xF6rigen"
+  scenarioDescription: 
+  scenarioInfoTexts: []
+  sceneName: scenario2scene
+  chefarztAudioClips: []
+  chefarztAudioLabels: []
+  chefarztTalkEmotions: 
+  kollegeAudioClips: []
+  kollegeAudioLabels: []
+  kollegeTalkEmotions: 
+  patientAudioClips: []
+  patientAudioLabels: []
+  patientTalkEmotions: 
+  fatherAudioClips:
+  - entschuldigung
+  - wirSindLisasEltern
+  - wasIstMitUnsererTochter
+  - nochNichtsGetan
+  - blinddarmEntzuendung
+  - wirdSieGesund
+  - lungenKrankheit
+  - nochNichtGehen
+  - schnellMachen
+  fatherAudioLabels:
+  - Entschuldigung2x
+  - Wir sind Lisas Eltern
+  - Was ist mit unserer Tochter
+  - Noch nichts getan?!
+  - "Blinddarmentz\xFCndung?"
+  - Wird sie gesund?!
+  - Lungenkrankheit, weisst du?
+  - Noch nicht gehen!
+  - Machen Sie schnell!
+  fatherTalkEmotions: 070000000400000006000000020000000500000005000000040000000700000002000000
+  motherAudioClips:
+  - seitHeuteMorgenDa
+  - wissenDieDochSelbstNicht
+  - wasHatSieDenn
+  - hatSieDarmverschluss
+  - leonSchwerKrank
+  - niemandKuemmertSich
+  - nieHatJemandZeit
+  motherAudioLabels:
+  - Bereits seit morgens da!
+  - Das wissen die selbst nicht!
+  - Was hat Sie denn jetzt?
+  - Darmverschluss?
+  - Leon ist schwer krank!
+  - "Unversch\xE4mt, niemand k\xFCmmert sich!"
+  - Bitte machen Sie schnell!
+  motherTalkEmotions: 03000000020000000500000005000000020000000300000002000000
+  characterNames:
+  - Mother
+  - Father
+  characterTags:
+  - Mother
+  - Father
+  availablePositions: []
+  cameraTags: []
+  loadingImage: {fileID: 0}
+  loadingTip: 
+  messages:
+  - "\u201EEs ist schon 15:30h und Sie m\xFCssen um 15:45h im Tumorboard im anderen
+    Geb\xE4ude sein. Der Tag ist sowieso schon hektisch und dann ist Ihre Kollegin,
+    mit der Sie sonst sehr gut zusammenarbeiten und sich auch gut verstehen, mit
+    Migr\xE4ne nachhause gegangen.\u201C"
+  - "\u201ELisa ist 4 Jahre alt und heute in den fr\xFChen Morgenstunden noch vom
+    Nachtdienst auf die Station aufgenommen worden. Sie litt unter Bauchschmerzen
+    und \xDCbelkeit und hat sich zuhause mehrfach erbrochen. Heute Morgen bei Visite
+    war sie schl\xE4frig und die Ober\xE4rztin hat zun\xE4chst i.v. Fl\xFCssigkeitssubstitution
+    und Analgesie verordnet.\u201C"
+  - "Die Stationsober\xE4rztin ruft an.\u201C"
+  - "\u201EEs ist 15:40h\u201C  "
+  - "\u201EEs ist 15:42h, sie m\xFCssen los, sonst gibt es \xC4rger mit dem Chef.
+    Bitte verabschieden Sie sich von den Angeh\xF6rigen und vertr\xF6sten Sie sie
+    auf sp\xE4ter.\u201C"
+  audioMessages:
+  - telefongespraech

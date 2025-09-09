@@ -1,0 +1,68 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5ed04d7a4526f8f4b8dbeb12f73e7866, type: 3}
+  m_Name: ScenarioData_Sc4
+  m_EditorClassIdentifier: 
+  scenarioId: 4
+  scenarioName: Der unfreundliche Kollege
+  scenarioDescription: 
+  scenarioInfoTexts: []
+  sceneName: scenario4scene
+  chefarztAudioClips: []
+  chefarztAudioLabels: []
+  chefarztTalkEmotions: 
+  kollegeAudioClips:
+  - GanzSchoenVielHeute
+  - SchonFastFertig
+  - ArbeitAbnehmenBitte
+  - Kameradenschwein
+  - NichtSoUnkollegial
+  - MachDenMuellerBrief
+  - MehrEinbringen
+  - NichtUeberarbeitenSarkastisch
+  - VisiteMorgenBitte
+  kollegeAudioLabels:
+  - 1a) Ganz schoen viel Arbeit
+  - 1b) Du bist ja fast fertig
+  - 1c) Kannst du mir helfen?
+  - 2a) Sei nicht so unkollegial
+  - "2b) Wengistens den M\xFCllerbrief"
+  - 3a) Kameradenschwein...
+  - 3b) (sarkastisch) Mach bloss nicht zu viel!
+  - 4a) Du solltest dich mehr einbringen!
+  - 4b) Mach wenigstens die Visite morgen!
+  kollegeTalkEmotions: 050000000400000008000000030000000200000002000000010000000700000008000000
+  patientAudioClips: []
+  patientAudioLabels: []
+  patientTalkEmotions: 
+  fatherAudioClips: []
+  fatherAudioLabels: []
+  fatherTalkEmotions: 
+  motherAudioClips: []
+  motherAudioLabels: []
+  motherTalkEmotions: 
+  characterNames:
+  - Kollege
+  characterTags:
+  - Kollege
+  availablePositions: []
+  cameraTags: []
+  loadingImage: {fileID: 0}
+  loadingTip: 
+  messages:
+  - Es war wieder eine anstrengende Woche, aber jetzt ist Freitagnachmittag. Sie
+    haben die letzten zwei Wochenenden gearbeitet und dieses Wochenende frei und
+    der Berg an Arbeit nimmt auch langsam ab. Sie freuen sich auf den Feierabend
+    und auf das wohlverdiente freie Wochenende
+  - "Herr M\xFCller hatte einen komplikativen Verlauf nach Pankreastektomie "
+  audioMessages:
+  - 
