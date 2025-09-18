@@ -3,10 +3,8 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
 using UnityEngine.Events;
-using System;
 using System.Collections.Generic;
 using UnityEngine.UI;
-using Unity.Services.Lobbies.Models;
 
 namespace OVGU.VAR.VRResist
 {

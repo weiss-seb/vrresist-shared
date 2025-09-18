@@ -444,7 +444,7 @@ namespace OVGU.VAR.VRResist
             NPC npc = GetNPCByName(npcName);
             if (npc.contr != null && npc.locom != null)
             {
-                npc.contr.Speak(audioClip, scenarioData.GetAnimationStyleForAudio(npcName, audioClip));
+                npc.contr.Speak(audioClip, scenarioData.GetAnimationStyleForAudio(npcName, audioClip).ToString());
                 npc.locom.lookAt(me);
                 npc.locom.setTurnTarget(me);
 

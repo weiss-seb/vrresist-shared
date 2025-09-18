@@ -18,10 +18,10 @@ namespace OVGU.VAR.VRResist
         [Header("System References")]
         [SerializeField] WebSocketClient webSocketClient;
         [Header("Scenario Selection")]
-
-
         [SerializeField] TMP_Dropdown scenarioDropdown;
-        [SerializeField] Text participantIDText;
+        [SerializeField] TMP_InputField participantIDText;
+        [SerializeField] Button startButton;
+        private int currentScenarioIndex = 0;
 
         [Header("Pre-configured UI Sections")]
         [Tooltip("UI Panels - configure these in Unity Editor with pre-made buttons")]
@@ -41,7 +41,7 @@ namespace OVGU.VAR.VRResist
         [SerializeField] Button[] cameraButtons; // Camera 1, 2, 3, 4, etc.
 
         [Header("Study Control Buttons - Assign in Unity Editor")]
-        [SerializeField] Button abortAllButton;
+        // [SerializeField] Button abortAllButton;
         [SerializeField] Button endStudyButton;
         [SerializeField] Button questionnaireButton;
 
@@ -74,7 +74,64 @@ namespace OVGU.VAR.VRResist
         void Start()
         {
             SetupStudyControlButtons();
+            scenarioDropdown.onValueChanged.AddListener(CheckScenarioID);
         }
+
+        #region QoL checks for scenario loading
+
+        public void CheckParticipantID()
+        {
+            //participant id text cant be empty and must be a number. if invalid, color the textfield background red and fade to white over 1 second
+            if (string.IsNullOrEmpty(participantIDText.text) || !int.TryParse(participantIDText.text, out int result))
+            {
+                Debug.Log(participantIDText.text);
+                var colors = participantIDText.GetComponentInParent<Image>().color;
+                colors = Color.red;
+                participantIDText.GetComponentInParent<Image>().color = colors;
+                StartCoroutine(FadeColor(participantIDText.GetComponentInParent<Image>(), Color.white, 1f));
+                Debug.LogWarning("[TabletEventControl] Invalid Participant ID entered");
+                //get the textfield to shake, look up in hierarchy for the gameobject with the animation component
+                participantIDText.GetComponentInParent<Animation>().Play("TextfieldShake");
+                participantIDText.text = "Participant ID";
+                return;
+            }
+
+            else
+            {
+                Debug.Log("[TabletEventControl] Valid Participant ID entered");
+                scenarioDropdown.interactable = true;
+            }
+
+            if (enableDetailedLogging)
+                Debug.Log("[TabletEventControl] Participant ID checked");
+
+
+        }
+
+        private void CheckScenarioID(int scenarioIndex)
+        {
+            if (scenarioIndex == currentScenarioIndex) return; // No change
+
+            currentScenarioIndex = scenarioIndex;
+            startButton.interactable = true;
+
+        }
+
+        IEnumerator FadeColor(Image image, Color targetColor, float duration)
+        {
+            Color initialColor = image.color;
+            float elapsed = 0f;
+
+            while (elapsed < duration)
+            {
+                image.color = Color.Lerp(initialColor, targetColor, elapsed / duration);
+                elapsed += Time.deltaTime;
+                yield return null;
+            }
+            image.color = targetColor;
+        }
+
+        #endregion
 
         /// <summary>
         /// Setup scenario dropdown and subscribe to scenario changes
@@ -125,8 +182,6 @@ namespace OVGU.VAR.VRResist
 
         public void StartSelectedScenario()
         {
-
-
             //Send a message to HMD to load up the selected scenario
             if (webSocketClient != null)
             {
@@ -175,7 +230,7 @@ namespace OVGU.VAR.VRResist
             if (showNBackTaskButton != null) showNBackTaskButton.onClick.RemoveAllListeners();
             if (hideMathTaskButton != null) hideMathTaskButton.onClick.RemoveAllListeners();
             if (hideNBackTaskButton != null) hideNBackTaskButton.onClick.RemoveAllListeners();
-            if (abortAllButton != null) abortAllButton.onClick.RemoveAllListeners();
+            // if (abortAllButton != null) abortAllButton.onClick.RemoveAllListeners();
             if (endStudyButton != null) endStudyButton.onClick.RemoveAllListeners();
             if (questionnaireButton != null) questionnaireButton.onClick.RemoveAllListeners();
         }
@@ -196,22 +251,22 @@ namespace OVGU.VAR.VRResist
             }
         }
 
-        // /// <summary>
-        // /// Request initial data from HMD (audio clips, available positions, etc.)
-        // /// </summary>
-        // public void RequestInitialData()
-        // {
-        //     if (webSocketClient != null)
-        //     {
-        //         var refreshMessage = new EventMessage("request", new string[] { "refresh" });
-        //         webSocketClient.SendEventMessage(refreshMessage);
-        //         Debug.Log("[TabletEventControl] Requested initial data from HMD");
-        //     }
-        // }
+        /// <summary>
+        /// Request initial data from HMD (audio clips, available positions, etc.)
+        /// </summary>
+        public void RequestInitialData()
+        {
+            if (webSocketClient != null)
+            {
+                var refreshMessage = new EventMessage("request", new string[] { "refresh" });
+                webSocketClient.SendEventMessage(refreshMessage);
+                Debug.Log("[TabletEventControl] Requested initial data from HMD");
+            }
+        }
 
         /// <summary>
         /// Setup task action buttons
-        /// </summary>
+        /// </summary>A
         void SetupTaskActionButtons()
         {
             if (showMathTaskButton != null)
@@ -240,13 +295,13 @@ namespace OVGU.VAR.VRResist
         /// </summary>
         void SetupStudyControlButtons()
         {
-            if (abortAllButton != null)
-            {
-                abortAllButton.onClick.AddListener(() => SendStudyControlCommand("ABORT_ALL"));
+            // if (abortAllButton != null)
+            // {
+            //     abortAllButton.onClick.AddListener(() => SendStudyControlCommand("ABORT_ALL"));
 
-                var buttonText = abortAllButton.GetComponentInChildren<TMPro.TextMeshProUGUI>();
-                if (buttonText != null) buttonText.text = "Alle Abbrechen";
-            }
+            //     var buttonText = abortAllButton.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+            //     if (buttonText != null) buttonText.text = "Alle Abbrechen";
+            // }
 
             if (endStudyButton != null)
             {
@@ -751,7 +806,7 @@ namespace OVGU.VAR.VRResist
             {
                 var message = new EventMessage("SET_INFO_TEXT", new string[] { });
                 webSocketClient.SendEventMessage(message);
-                Debug.Log("[TabletEventControl] Requested study setup from HMD");
+                Debug.Log("[TabletEventControl] Setting Info Text in HMD ");
             }
             else
             {
