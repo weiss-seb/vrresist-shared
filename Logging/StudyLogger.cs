@@ -106,6 +106,7 @@ namespace OVGU.VAR.VRResist
         /// <returns>StreamWriter for the log file, or null if creation failed</returns>
         public StreamWriter GetStreamWriter()
         {
+            Debug.Log("[StudyLogger] Preparing log file for scene: " + SceneManager.GetActiveScene().name);
 #if UNITY_EDITOR
             string path = "Assets/studyResults/";
 #elif UNITY_ANDROID || UNITY_STANDALONE_WIN

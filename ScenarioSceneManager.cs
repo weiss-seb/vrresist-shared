@@ -3,7 +3,6 @@ using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
 using UnityEngine.Events;
-using System;
 using System.Collections.Generic;
 using UnityEngine.UI;
 
