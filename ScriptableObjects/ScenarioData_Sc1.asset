@@ -14,17 +14,18 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   scenarioId: 1
   scenarioName: Der kritische Patient
-  scenarioDescription: 
+  scenarioDescription: "Der folgende Patient hat eine symptomatische Leistenhernie
+    rechts und stellt sich in der Sprechstunde zur Beratung und Planung bzgl. einer
+    Operation vor. Es liegen Ihnen keine weiteren Befunde vor. Bevor Sie zum Patienten
+    ins Zimmer gegangen sind, hat der Oberarzt mitgeteilt, dass er in einer wichtigen
+    Konferenz ist und daher nicht gest\xF6rt werden darf."
   scenarioInfoTexts:
-  - "Der folgende Patient hat eine symptomatische Leistenhernie rechts und stellt
-    sich in der Sprechstunde zur Beratung und Planung bzgl. einer Operation vor.
-    Es liegen Ihnen keine weiteren Befunde vor. Bevor Sie zum Patienten ins Zimmer
-    gegangen sind, hat der Oberarzt mitgeteilt, dass er in einer wichtigen Konferenz
-    ist und daher nicht gest\xF6rt werden darf.\u201C"
   - Diese Informationen liegen Ihnen nicht vor und Ihr Wissenstand zur minimalinvasiven
     Hernienversorgung ist begrenzt, da Sie sich noch ganz am Anfang Ihrer Ausbildung
     befinden.
   - Diese Information liegt Ihnen nicht vor.
+  - "Ohne ausf\xFChrliche Anamnese und k\xF6rperliche Untersuchung k\xF6nnen Sie
+    diese Frage nicht beantworten."
   sceneName: scenario1scene
   chefarztAudioClips: []
   chefarztAudioLabels: []
@@ -75,18 +76,5 @@ MonoBehaviour:
   - Patient
   availablePositions: []
   cameraTags: []
-  loadingImage: {fileID: 0}
-  loadingTip: 
-  messages:
-  - "\u201EDer folgende Patient hat eine symptomatische Leistenhernie rechts und
-    stellt sich in der Sprechstunde zur Beratung und Planung bzgl. einer Operation
-    vor. Es liegen Ihnen keine weiteren Befunde vor. Bevor Sie zum Patienten ins
-    Zimmer gegangen sind, hat der Oberarzt mitgeteilt, dass er in einer wichtigen
-    Konferenz ist und daher nicht gest\xF6rt werden darf.\u201C  "
-  - "\u201EDiese Informationen liegen Ihnen nicht vor und Ihr Wissenstand zur minimalinvasiven
-    Hernienversorgung ist begrenzt, da Sie sich noch ganz am Anfang Ihrer Ausbildung
-    befinden.\u201C"
-  - "\u201EDiese Information liegt Ihnen nicht vor.\u201C"
-  - "Wenn 2.: \u201EOhne ausf\xFChrliche Anamnese und k\xF6rperliche Untersuchung
-    k\xF6nnen Sie diese Frage nicht beantworten.\u201C  "
   audioMessages: []
+  startPosition: {x: 11.85, y: 0, z: 11.98}

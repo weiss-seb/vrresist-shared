@@ -12,9 +12,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5ed04d7a4526f8f4b8dbeb12f73e7866, type: 3}
   m_Name: NULL_DATA_FOR_WAITINGROOM
   m_EditorClassIdentifier: 
-  scenarioId: 777
+  scenarioId: 0
   scenarioName: Waiting Room
-  scenarioDescription: 
+  scenarioDescription: "Mit dieser Studie untersuchen wir die M\xF6glichkeiten, mit
+    denen in VR ein Stresslevel erzeugt werden. Damit sollen in Zukunft moderne Trainingsszenarien
+    erstellt werden. "
   scenarioInfoTexts: []
   sceneName: WaitingRoom
   chefarztAudioClips: []

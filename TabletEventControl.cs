@@ -196,18 +196,18 @@ namespace OVGU.VAR.VRResist
             }
         }
 
-        // /// <summary>
-        // /// Request initial data from HMD (audio clips, available positions, etc.)
-        // /// </summary>
-        // public void RequestInitialData()
-        // {
-        //     if (webSocketClient != null)
-        //     {
-        //         var refreshMessage = new EventMessage("request", new string[] { "refresh" });
-        //         webSocketClient.SendEventMessage(refreshMessage);
-        //         Debug.Log("[TabletEventControl] Requested initial data from HMD");
-        //     }
-        // }
+        /// <summary>
+        /// Request initial data from HMD (audio clips, available positions, etc.)
+        /// </summary>
+        public void RequestInitialData()
+        {
+            if (webSocketClient != null)
+            {
+                var refreshMessage = new EventMessage("request", new string[] { "refresh" });
+                webSocketClient.SendEventMessage(refreshMessage);
+                Debug.Log("[TabletEventControl] Requested initial data from HMD");
+            }
+        }
 
         /// <summary>
         /// Setup task action buttons

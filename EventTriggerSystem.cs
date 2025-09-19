@@ -51,7 +51,8 @@ namespace OVGU.VAR.VRResist
         public CameraControl cameraController;
 
         [Header("UI References")]
-        public TMP_Text infoTextUI;
+        public TMP_Text participantExplainText;
+
 
         [Header("Debug Settings")]
         [SerializeField] bool enableDetailedLogging = true;
@@ -421,20 +422,21 @@ namespace OVGU.VAR.VRResist
 
         public void SetInfoText()
         {
-            if (infoTextUI == null)
+            if (participantExplainText == null)
             {
                 Debug.LogError("[EventTriggerSystem] InfoTextUI not assigned!");
                 return;
             }
-            string text = scenarioData.scenarioInfoTexts.Length > currentInfoTextIndex
-                ? scenarioData.scenarioInfoTexts[currentInfoTextIndex]
+            string text = scenarioData.scenarioInfoTexts.Length > currentInfoTextIndex ? scenarioData.scenarioInfoTexts[currentInfoTextIndex]
                 : "";
 
-            if (infoTextUI != null)
+            if (participantExplainText != null)
             {
-                infoTextUI.SetText(text);
+                participantExplainText.SetText(text);
             }
+            currentInfoTextIndex++;
         }
+
 
         /// <summary>
         /// Make an NPC play an audio clip - Direct method call

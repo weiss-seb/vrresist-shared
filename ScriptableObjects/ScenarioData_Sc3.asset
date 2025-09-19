@@ -14,8 +14,12 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   scenarioId: 3
   scenarioName: "Das Mitarbeitergespr\xE4ch"
-  scenarioDescription: 
-  scenarioInfoTexts: []
+  scenarioDescription: "Sie haben heute Ihr erstes Mitarbeitergespr\xE4ch. Sie sind
+    nun seit einem Jahr hier in der Klinik, an ihrer Wunschstelle, und haben das
+    Gef\xFChl sich gut eingelebt zu haben. Sie sind trotzdem etwas aufgeregt, weil
+    Ihr Chef immer einen distanzierten Eindruck macht."
+  scenarioInfoTexts:
+  - "Sie k\xF6nnen sich an keine Hinweise erinnern."
   sceneName: scenario3scene
   chefarztAudioClips:
   - AssistentenSelbstEinschaetzung
@@ -62,13 +66,6 @@ MonoBehaviour:
   - chefarzt
   availablePositions: []
   cameraTags: []
-  loadingImage: {fileID: 0}
-  loadingTip: 
-  messages:
-  - "Sie haben heute Ihr erstes Mitarbeitergespr\xE4ch. Sie sind nun seit einem Jahr
-    hier in der Klinik, an ihrer Wunschstelle, und haben das Gef\xFChl sich gut eingelebt
-    zu haben. Sie sind trotzdem etwas aufgeregt, weil Ihr Chef immer einen distanzierten
-    Eindruck macht."
-  - "Sie k\xF6nnen sich an keine Hinweise erinnern!"
   audioMessages:
   - 
+  startPosition: {x: 0, y: 0, z: 0}

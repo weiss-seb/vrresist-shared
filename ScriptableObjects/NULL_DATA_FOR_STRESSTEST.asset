@@ -10,14 +10,14 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5ed04d7a4526f8f4b8dbeb12f73e7866, type: 3}
-  m_Name: NULL_DATA_FOR_QUESTIONNAIRE
+  m_Name: NULL_DATA_FOR_STRESSTEST
   m_EditorClassIdentifier: 
-  scenarioId: 888
-  scenarioName: Questionnaire
-  scenarioDescription: Bitte nutzen Sie den Zeigefinger und Daumen, um Schieberegler
-    zu ziehen
+  scenarioId: 5
+  scenarioName: StressTest
+  scenarioDescription: "Mit dem folgenden Experiment wollen wir die F\xE4higkeit
+    der VR untersuchen, bei Ihnen mentale Last zu erzeugen!"
   scenarioInfoTexts: []
-  sceneName: QuestionnaireScene
+  sceneName: StressTest
   chefarztAudioClips: []
   chefarztAudioLabels: []
   chefarztTalkEmotions: 
@@ -38,6 +38,7 @@ MonoBehaviour:
   availablePositions: []
   cameraTags: []
   loadingImage: {fileID: 0}
-  loadingTip: 
+  loadingTip: Lade Warteraum...
   messages: []
-  audioMessages: []
+  audioMessages:
+  - 

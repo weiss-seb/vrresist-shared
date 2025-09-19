@@ -2,6 +2,7 @@ using UnityEngine;
 using TMPro;
 using UnityEngine.SceneManagement;
 using System;
+using UnityEngine.Events;
 
 
 
@@ -23,8 +24,10 @@ namespace OVGU.VAR.VRResist
 
         [Header("UI References")]
         public TMP_Text debugText;
-        [SerializeField] ScenarioSceneManager scenarioSceneManager;
+        public ScenarioSceneManager scenarioSceneManager;
 
+        //Event that send a string message to the TCP server to be sent to the client
+        public UnityEvent<string> sendMessageEvent;
 
         TCPServer _tcpServer;
 
@@ -39,8 +42,39 @@ namespace OVGU.VAR.VRResist
         #region LifeCycle
         void Start()
         {
-            eventTriggerSystem = FindObjectOfType<EventTriggerSystem>();
 
+            DiscoverScenarioComponents();
+
+        }
+        // Reinitialize references after scene load
+        void DiscoverScenarioComponents()
+        {
+            if (scenarioLoader == null)
+            {
+                scenarioLoader = FindObjectOfType<ScenarioLoader>();
+                if (scenarioLoader == null)
+                {
+                    Debug.LogError("[MessageHandler] ScenarioLoader not found in scene!");
+                }
+            }
+
+            taskManager = FindObjectOfType<StudyTaskManager>();
+            //TODO probably not needed anymore, deprecated 
+            if (taskManager == null)
+            {
+
+                Debug.LogError("[MessageHandler] StudyTaskManager not found in scene!");
+            }
+
+
+            eventTriggerSystem = FindObjectOfType<EventTriggerSystem>();
+            if (eventTriggerSystem == null)
+            {
+                Debug.LogError("[MessageHandler] EventTriggerSystem not found in scene!");
+            }
+
+
+            scenarioSceneManager = FindObjectOfType<ScenarioSceneManager>();
             // Find reference to ScenarioSceneManager loaded in the waiting room scene
             if (scenarioSceneManager == null)
             {
@@ -50,6 +84,14 @@ namespace OVGU.VAR.VRResist
                     Debug.LogError("[MessageHandler] ScenarioSceneManager not found in scene!");
                 }
             }
+
+            // _tcpServer = GameObject.Find("TCP_Server").GetComponent<TCPServer>(); //comes from the scene that was loaded before
+            // _tcpServer.messageEvent.AddListener(OnReceive);
+
+            xrPrefab = GameObject.FindWithTag("XRUser");
+
+            // Notify that setup is complete
+            Debug.Log("[MessageHandler] Message handler setup complete");
         }
 
         void OnEnable()
@@ -66,49 +108,7 @@ namespace OVGU.VAR.VRResist
         {
             Debug.Log($"[MessageHandler] Scene loaded: {scene.name} (mode: {mode})");
 
-            // Reinitialize references after scene load
-            if (eventTriggerSystem == null)
-            {
-                eventTriggerSystem = FindObjectOfType<EventTriggerSystem>();
-            }
-
-            if (scenarioSceneManager == null)
-            {
-                scenarioSceneManager = FindObjectOfType<ScenarioSceneManager>();
-            }
-
-            if (scenarioLoader == null)
-            {
-                scenarioLoader = FindObjectOfType<ScenarioLoader>();
-                if (scenarioLoader == null)
-                {
-                    Debug.LogError("[MessageHandler] ScenarioLoader not found in scene!");
-                }
-            }
-
-            //TODO probably not needed anymore, deprecated 
-            if (taskManager == null)
-            {
-                taskManager = FindObjectOfType<StudyTaskManager>();
-                if (taskManager == null)
-                {
-                    Debug.LogError("[MessageHandler] StudyTaskManager not found in scene!");
-                }
-            }
-
-
-            _tcpServer = GameObject.Find("TCP_Server").GetComponent<TCPServer>(); //comes from the scene that was loaded before
-
-            xrPrefab = GameObject.Find("XR Origin (XR Rig)");
-            if (xrPrefab == null)
-            {
-                Debug.LogError("[MessageHandler] XR Prefab not found in scene!");
-            }
-
-            // Notify that setup is complete
-
-            Debug.Log("[MessageHandler] Message handler setup complete");
-
+            DiscoverScenarioComponents();
         }
 
         #endregion
@@ -128,20 +128,6 @@ namespace OVGU.VAR.VRResist
             catch (System.Exception e)
             {
                 Debug.LogError($"[MessageHandler] Failed to parse message: {e.Message}");
-            }
-        }
-
-        public void SetTCPServer(TCPServer server)
-        {
-            _tcpServer = server;
-            if (_tcpServer != null)
-            {
-                //_tcpServer.OnMessageReceived += OnReceive;
-                Debug.Log("[MessageHandler] TCP Server set successfully");
-            }
-            else
-            {
-                Debug.LogError("[MessageHandler] Failed to set TCP Server - it is null");
             }
         }
 
@@ -264,12 +250,6 @@ namespace OVGU.VAR.VRResist
 
         private void HandleSetInfoText(EventMessage msg)
         {
-            if (msg.content.Length < 1)
-            {
-                Debug.LogError("[MessageHandler] SET_INFO_TEXT requires 1 parameter: infoText");
-                return;
-            }
-
             eventTriggerSystem.SetInfoText();
         }
 
@@ -606,7 +586,7 @@ namespace OVGU.VAR.VRResist
                 //Send scene information by getting scene info from scenemanager and packing it into an EventMessage
                 if (scenarioSceneManager != null)
                 {
-                    var sceneInfo = scenarioSceneManager.GetAllSceneInfo();
+                    var sceneInfo = scenarioSceneManager.GetSceneListInfo();
                     SendEventMessageToClient(new EventMessage("scenarioList", sceneInfo));
                 }
 
@@ -624,7 +604,6 @@ namespace OVGU.VAR.VRResist
             }
         }
 
-
         /// <summary>
         ///  // Convert the message to JSON and send it via TCP
         /// </summary>
@@ -633,7 +612,8 @@ namespace OVGU.VAR.VRResist
         {
             string s = JsonUtility.ToJson(msg);
             Debug.Log("Sending JSON: " + s);
-            _tcpServer.SendMessageToClient(s);
+            sendMessageEvent.Invoke(s);
+
         }
 
         private string[] GetAudioClipsForCharacter(GameObject NPC)

@@ -75,20 +75,14 @@ namespace OVGU.VAR.VRResist
         [Tooltip("Names of cameras to find in the scene. Must match Camera GameObject names in your scene.")]
         public string[] cameraTags;
 
-        [Header("Loading Screen")]
-        [Tooltip("Image to display during scene loading")]
-        public Sprite loadingImage;
-
-        [Tooltip("Helpful tip to show during loading")]
-        public string loadingTip;
 
         [Header("Additional Data")]
-        [Tooltip("Additional messages for this scenario")]
-        public string[] messages;
-
 
         [Tooltip("Additional audio files for this scenario")]
         public string[] audioMessages;
+
+        [Tooltip("Startposition for this scenario")]
+        public Vector3 startPosition;
 
         /// <summary>
         /// Get audio clips for a specific NPC

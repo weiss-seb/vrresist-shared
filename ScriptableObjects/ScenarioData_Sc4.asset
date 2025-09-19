@@ -13,9 +13,13 @@ MonoBehaviour:
   m_Name: ScenarioData_Sc4
   m_EditorClassIdentifier: 
   scenarioId: 4
-  scenarioName: Der unfreundliche Kollege
-  scenarioDescription: 
-  scenarioInfoTexts: []
+  scenarioName: Der Kollege
+  scenarioDescription: Es war wieder eine anstrengende Woche, aber jetzt ist Freitagnachmittag.
+    Sie haben die letzten zwei Wochenenden gearbeitet und dieses Wochenende frei
+    und der Berg an Arbeit nimmt auch langsam ab. Sie freuen sich auf den Feierabend
+    und auf das wohlverdiente freie Wochenende.
+  scenarioInfoTexts:
+  - "Herr M\xFCller hatte einen komplikativen Verlauf nach Pankreatektomie \u2026"
   sceneName: scenario4scene
   chefarztAudioClips: []
   chefarztAudioLabels: []
@@ -56,13 +60,6 @@ MonoBehaviour:
   - Kollege
   availablePositions: []
   cameraTags: []
-  loadingImage: {fileID: 0}
-  loadingTip: 
-  messages:
-  - Es war wieder eine anstrengende Woche, aber jetzt ist Freitagnachmittag. Sie
-    haben die letzten zwei Wochenenden gearbeitet und dieses Wochenende frei und
-    der Berg an Arbeit nimmt auch langsam ab. Sie freuen sich auf den Feierabend
-    und auf das wohlverdiente freie Wochenende
-  - "Herr M\xFCller hatte einen komplikativen Verlauf nach Pankreastektomie "
   audioMessages:
   - 
+  startPosition: {x: 0, y: 0, z: 2.023}

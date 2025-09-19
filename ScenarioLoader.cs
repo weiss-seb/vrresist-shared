@@ -2,6 +2,9 @@
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using TMPro;
+using UnityEngine.UI;
+using UnityEditor;
 
 namespace OVGU.VAR.VRResist
 {
@@ -17,6 +20,7 @@ namespace OVGU.VAR.VRResist
 
         [Header("Debug Settings")]
         [SerializeField] private bool enableDetailedLogging = true;
+
 
         // Cached references to found GameObjects
         private Dictionary<string, GameObject> foundCharacters = new Dictionary<string, GameObject>();
@@ -49,8 +53,7 @@ namespace OVGU.VAR.VRResist
             public string label;
         }
 
-
-        void Start()
+        private void OnEnable()
         {
             if (scenarioData == null)
             {
@@ -59,7 +62,10 @@ namespace OVGU.VAR.VRResist
             }
 
             LoadScenarioData();
+            // Optionally, subscribe to events if needed
         }
+
+
 
         public SO_ScenarioData GetScenarioData()
         {
@@ -323,15 +329,43 @@ namespace OVGU.VAR.VRResist
 
         internal string GetNextScenarioHelpText()
         {
-            if (currentInfoTextIndex < scenarioData.messages.Length)
+            if (currentInfoTextIndex < scenarioData.scenarioInfoTexts.Length)
             {
-                return scenarioData.messages[currentInfoTextIndex++];
+                return scenarioData.scenarioInfoTexts[currentInfoTextIndex++];
             }
             else
             {
                 Debug.LogWarning("[ScenarioLoader] No more help texts available!");
                 return null;
             }
+        }
+
+        internal string GetLoadingScreenText()
+        {
+            if (scenarioData)
+                return scenarioData.scenarioDescription;
+
+            else
+                return "no scenario data available";
+        }
+
+
+        internal string GetLoadingScreenTitle()
+        {
+            if (scenarioData)
+                return scenarioData.scenarioName;
+
+            else
+                return "no scenario data available";
+        }
+
+        internal Vector3 GetStartPosition()
+        {
+            if (scenarioData != null)
+                return scenarioData.startPosition;
+
+            else
+                return Vector3.zero;
         }
 
         /// <summary>
