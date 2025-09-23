@@ -63,7 +63,7 @@ MonoBehaviour:
   characterNames:
   - Chefarzt
   characterTags:
-  - chefarzt
+  - Chefarzt
   availablePositions: []
   cameraTags: []
   audioMessages:
