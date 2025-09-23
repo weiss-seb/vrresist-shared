@@ -568,7 +568,7 @@ namespace OVGU.VAR.VRResist
             switch (npcName.ToLower())
             {
                 case "patient": return patientNPC;
-                case "colleague": return colleagueNPC;
+                case "kollege": return colleagueNPC;
                 case "head_doctor":
                 case "chefarzt": // Added alias for consistency
                     return head_doctorNPC;
