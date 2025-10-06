@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using System;
+using Unity.VisualScripting;
 
 namespace OVGU.VAR.VRResist
 {
@@ -29,9 +30,11 @@ namespace OVGU.VAR.VRResist
         [SerializeField] GameObject taskActionsPanel;
         [SerializeField] GameObject cameraActionsPanel;
         [SerializeField] GameObject studyControlPanel;
+        [SerializeField] GameObject difficultySettingsPanel;
 
 
         [Header("Task Action Buttons - Assign in Unity Editor")]
+        [SerializeField] Button PhoneRingingButton;
         [SerializeField] Button showMathTaskButton;
         [SerializeField] Button showNBackTaskButton;
         [SerializeField] Button hideMathTaskButton;
@@ -39,6 +42,10 @@ namespace OVGU.VAR.VRResist
 
         [Header("Camera Control Buttons - Assign in Unity Editor")]
         [SerializeField] Button[] cameraButtons; // Camera 1, 2, 3, 4, etc.
+
+        [Header("Difficulty Settings for Math and N-Back Tasks")]
+        [SerializeField] ToggleGroup difficultyToggleGroup;
+        public ENUM_TaskDifficulty Difficulty; // Assign in Unity Editor if needed
 
         [Header("Study Control Buttons - Assign in Unity Editor")]
         // [SerializeField] Button abortAllButton;
@@ -74,6 +81,7 @@ namespace OVGU.VAR.VRResist
         void Start()
         {
             SetupStudyControlButtons();
+            Difficulty = ENUM_TaskDifficulty.None; // Default difficulty
             scenarioDropdown.onValueChanged.AddListener(CheckScenarioID);
         }
 
@@ -105,7 +113,6 @@ namespace OVGU.VAR.VRResist
             if (enableDetailedLogging)
                 Debug.Log("[TabletEventControl] Participant ID checked");
 
-
         }
 
         private void CheckScenarioID(int scenarioIndex)
@@ -115,6 +122,19 @@ namespace OVGU.VAR.VRResist
             currentScenarioIndex = scenarioIndex;
             startButton.interactable = true;
 
+            if (currentScenarioIndex == scenarioDropdown.options.Count - 1)
+            {
+                EnableDifficulty(true);
+            }
+
+        }
+
+        private void EnableDifficulty(bool enable)
+        {
+            foreach (var toggle in difficultyToggleGroup.GetComponentsInChildren<Toggle>())
+            {
+                toggle.interactable = enable;
+            }
         }
 
         IEnumerator FadeColor(Image image, Color targetColor, float duration)
@@ -134,23 +154,11 @@ namespace OVGU.VAR.VRResist
         #endregion
 
         /// <summary>
-        /// Setup scenario dropdown and subscribe to scenario changes
-        /// </summary>
-        public void SetupScenarioDropdown(EventMessage message)
-        {
-            PopulateScenarioDropdown(message.content);
-
-
-
-            if (enableDetailedLogging)
-                Debug.Log("[TabletEventControl] Scenario dropdown setup complete");
-        }
-
-        /// <summary>
         /// Populate scenario dropdown with available scenarios
         /// </summary>
-        void PopulateScenarioDropdown(string[] content)
+        void PopulateScenarioDropdown(EventMessage message)
         {
+            string[] content = message.content;
             if (scenarioDropdown == null) return;
 
             scenarioDropdown.ClearOptions();
@@ -185,7 +193,7 @@ namespace OVGU.VAR.VRResist
             //Send a message to HMD to load up the selected scenario
             if (webSocketClient != null)
             {
-                var message = new EventMessage("SCENARIO_CHANGE", new string[] { (scenarioDropdown.value + 1).ToString() });
+                var message = new EventMessage("SCENARIO_CHANGE", new string[] { (scenarioDropdown.value + 1).ToString(), nameof(Difficulty) });
                 webSocketClient.SendEventMessage(message);
                 Debug.Log($"[TabletEventControl] Starting scenario:");
             }
@@ -195,7 +203,37 @@ namespace OVGU.VAR.VRResist
             }
 
             StudyLogger.Instance.WriteLineToLog("Changing to Scenario: " + (scenarioDropdown.value + 1).ToString());
+        }
 
+        public void AdaptUIForScenario()
+        {
+            int dropdownIndex = scenarioDropdown.value;
+
+            // Reset all buttons and panels
+            PhoneRingingButton.interactable = false;
+            PhoneRingingButton.interactable = false;
+            showMathTaskButton.interactable = false;
+            showNBackTaskButton.interactable = false;
+
+            EnableDifficulty(false);
+
+            Debug.Log("[TabletEventControl] Adapting UI for scenario: " + scenarioDropdown.options[dropdownIndex].text);
+
+            if (scenarioDropdown.value == 2)
+            {
+                PhoneRingingButton.interactable = true;
+            }
+
+            if (scenarioDropdown.options[dropdownIndex].text.Equals("Rechnen"))
+            {
+                showMathTaskButton.interactable = true;
+                EnableDifficulty(true);
+            }
+            if (scenarioDropdown.options[dropdownIndex].text.Equals("N-Back"))
+            {
+                showNBackTaskButton.interactable = true;
+                EnableDifficulty(true);
+            }
         }
 
         public void SetParticipantID()
@@ -203,24 +241,6 @@ namespace OVGU.VAR.VRResist
             PlayerPrefs.SetInt("CurrentParticipantID", int.Parse(participantIDText.text));
             PlayerPrefs.Save();
         }
-
-        //    /// <summary> 
-        //     /// Refresh all button configurations after scenario change
-        //     /// </summary>
-        //     void RefreshButtonConfigurations()
-        //     {
-        //         // Clear existing button listeners
-        //         ClearButtonListeners();
-
-        //         // Re-setup all buttons with new scenario data
-
-        //         SetupTaskActionButtons();
-        //         SetupStudyControlButtons();
-        //     }
-
-        /// <summary>
-        /// Clear all existing button listeners
-        /// </summary>
         void ClearButtonListeners()
         {
             // Clear other button listeners
@@ -265,52 +285,24 @@ namespace OVGU.VAR.VRResist
         }
 
         /// <summary>
-        /// Setup task action buttons
-        /// </summary>A
-        void SetupTaskActionButtons()
-        {
-            if (showMathTaskButton != null)
-            {
-                showMathTaskButton.onClick.AddListener(() => SendTaskCommand("MATH_TASK", new string[] { "medium", "60" }));
-            }
-
-            if (showNBackTaskButton != null)
-            {
-                showNBackTaskButton.onClick.AddListener(() => SendTaskCommand("NBACK_TASK", new string[] { "2", "60" }));
-            }
-
-            if (hideMathTaskButton != null)
-            {
-                hideMathTaskButton.onClick.AddListener(() => SendTaskCommand("HIDE_MATH_TASK", new string[] { }));
-            }
-
-            if (hideNBackTaskButton != null)
-            {
-                hideNBackTaskButton.onClick.AddListener(() => SendTaskCommand("HIDE_NBACK_TASK", new string[] { }));
-            }
-        }
-
-        /// <summary>
         /// Setup study control buttons
         /// </summary>
         void SetupStudyControlButtons()
         {
-            // if (abortAllButton != null)
-            // {
-            //     abortAllButton.onClick.AddListener(() => SendStudyControlCommand("ABORT_ALL"));
-
-            //     var buttonText = abortAllButton.GetComponentInChildren<TMPro.TextMeshProUGUI>();
-            //     if (buttonText != null) buttonText.text = "Alle Abbrechen";
-            // }
+            if (showMathTaskButton != null)
+            {
+                showMathTaskButton.onClick.AddListener(() => SendTaskCommand("SMATH_TASK", new string[] { Difficulty.ToString() }));
+                var buttonText = showMathTaskButton.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+                if (buttonText != null) buttonText.text = "Nächste Rechenaufgabe";
+            }
 
             if (endStudyButton != null)
             {
                 endStudyButton.onClick.AddListener(() => SendStudyControlCommand("END_SCENE"));
 
                 var buttonText = endStudyButton.GetComponentInChildren<TMPro.TextMeshProUGUI>();
-                if (buttonText != null) buttonText.text = "Studie Beenden";
+                if (buttonText != null) buttonText.text = "Studie beenden";
             }
-
 
             //TODO USe this to open the questionnaore scene on the headset
             if (questionnaireButton != null)
@@ -322,6 +314,13 @@ namespace OVGU.VAR.VRResist
             }
         }
 
+        public void SetDifficultyFromToggle(int difficulty)
+        {
+            //cast difficulty to ENUM_TaskDifficulty
+            Difficulty = (ENUM_TaskDifficulty)difficulty;
+
+            Debug.Log($"[TabletEventControl] Difficulty set to {Difficulty} from toggle");
+        }
         /// <summary>
         /// Send NPC talk command to HMD
         /// </summary>
@@ -432,7 +431,7 @@ namespace OVGU.VAR.VRResist
                     break;
                 case "scenarioList":
                     Debug.Log("[TabletEventControl] Received scenario list update");
-                    SetupScenarioDropdown(message);
+                    PopulateScenarioDropdown(message);
                     break;
                 case "SCENE_LOADED":
                     SendCameraStreamRequest();
