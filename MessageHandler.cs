@@ -19,7 +19,7 @@ namespace OVGU.VAR.VRResist
 
         [Header("System References")]
         public EventTriggerSystem eventTriggerSystem;
-        public StudyTaskManager taskManager;
+        public StudyTaskController taskController;
         [SerializeField] ScenarioLoader scenarioLoader;
 
         [Header("UI References")]
@@ -58,12 +58,12 @@ namespace OVGU.VAR.VRResist
                 }
             }
 
-            taskManager = FindObjectOfType<StudyTaskManager>();
-            //TODO probably not needed anymore, deprecated 
-            if (taskManager == null)
+            taskController = FindObjectOfType<StudyTaskController>();
+            //TODO probably not needed anymore, deprecated
+            if (taskController == null)
             {
 
-                Debug.LogError("[MessageHandler] StudyTaskManager not found in scene!");
+                Debug.LogError("[MessageHandler] StudyTaskController not found in scene!");
             }
 
 
@@ -306,15 +306,6 @@ namespace OVGU.VAR.VRResist
                 case "request":
                     HandleRequest(msg);
                     break;
-
-                //TODO: put nback and math task handling here
-                case "task":
-                    if (taskManager != null)
-                    {
-                        taskManager.receiveTaskMessage(msg);
-                    }
-                    break;
-
                 case "chat":
                     HandleChat(msg);
                     break;
@@ -417,7 +408,7 @@ namespace OVGU.VAR.VRResist
             Debug.Log("[MessageHandler] Showing n-back task");
 
             string nValue = msg.content.Length > 0 ? msg.content[0] : "2";
-            string timeLimit = msg.content.Length > 1 ? msg.content[1] : "60";
+            diff timeLimit = msg.content.Length > 1 ? msg.content[1] : "60";
 
             // Use new simplified direct method call
             if (eventTriggerSystem != null)
@@ -508,6 +499,13 @@ namespace OVGU.VAR.VRResist
         {
 
             int scenarioID = int.Parse(msg.content[0]);
+
+            // if difficulty exists in content[1], set it in PlayerPrefs
+            if (msg.content.Length > 1 && !string.IsNullOrEmpty(msg.content[1]))
+            {
+                PlayerPrefs.SetString("LastDifficultyUsed", msg.content[1]);
+                Debug.Log($"[MessageHandler] Set LastDifficultyUsed to {msg.content[1]}");
+            }
 
             Debug.Log($"[MessageHandler] Changing to scenario: {scenarioID}");
 

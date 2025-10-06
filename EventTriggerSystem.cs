@@ -44,6 +44,7 @@ namespace OVGU.VAR.VRResist
         public GameObject me;
 
         [Header("Task System References")]
+
         public MathTaskManager mathTaskManager;
         public NBackTask nBackTaskManager;
 
@@ -284,6 +285,7 @@ namespace OVGU.VAR.VRResist
         }
 
 
+        //TODO possibly deprecated
         // adds scenario event to the event queue
         public void AddAudioEvents(string NPCName, string[] audioClipNames)
         {
@@ -293,11 +295,9 @@ namespace OVGU.VAR.VRResist
                 case "patient":
                     //  orderedEventList[0] = audioClipNames.ToList();
                     break;
-
                 case "colleague":
                     //      orderedEventList[1] = audioClipNames.ToList();
                     break;
-
                 case "head_doctor":
                     //  orderedEventList[2] = audioClipNames.ToList();
                     break;
@@ -369,7 +369,6 @@ namespace OVGU.VAR.VRResist
             }
         }
 
-
         private void lookAndSpeak(NPC nPC, string clipName)
         {
             if (nPC.contr != null && nPC.locom != null)
@@ -437,7 +436,6 @@ namespace OVGU.VAR.VRResist
             currentInfoTextIndex++;
         }
 
-
         /// <summary>
         /// Make an NPC play an audio clip - Direct method call
         /// </summary>
@@ -467,7 +465,7 @@ namespace OVGU.VAR.VRResist
             if (mathTaskManager != null)
             {
                 // Assuming MathTaskManager has a method to show tasks
-                // mathTaskManager.ShowTask(difficulty, int.Parse(timeLimit));
+                mathTaskManager.SetDifficulty(1);
                 Debug.Log($"[EventTriggerSystem] Showing math task: {difficulty}, {timeLimit}s");
             }
             else
@@ -484,7 +482,7 @@ namespace OVGU.VAR.VRResist
             if (nBackTaskManager != null)
             {
                 // Assuming NBackTask has a method to show tasks
-                // nBackTaskManager.StartTask(int.Parse(nValue), int.Parse(timeLimit));
+                nBackTaskManager.StartTask(int.Parse(nValue), int.Parse(timeLimit));
                 Debug.Log($"[EventTriggerSystem] Showing N-Back task: N={nValue}, {timeLimit}s");
             }
             else
@@ -581,7 +579,5 @@ namespace OVGU.VAR.VRResist
                     return new NPC(); // Return an empty NPC struct to avoid null issues
             }
         }
-
-
     }
 }
