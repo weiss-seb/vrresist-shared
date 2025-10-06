@@ -19,7 +19,6 @@ namespace OVGU.VAR.VRResist
 
         [Header("System References")]
         public EventTriggerSystem eventTriggerSystem;
-        public StudyTaskController taskController;
         [SerializeField] ScenarioLoader scenarioLoader;
 
         [Header("UI References")]
@@ -57,15 +56,6 @@ namespace OVGU.VAR.VRResist
                     Debug.LogError("[MessageHandler] ScenarioLoader not found in scene!");
                 }
             }
-
-            taskController = FindObjectOfType<StudyTaskController>();
-            //TODO probably not needed anymore, deprecated
-            if (taskController == null)
-            {
-
-                Debug.LogError("[MessageHandler] StudyTaskController not found in scene!");
-            }
-
 
             eventTriggerSystem = FindObjectOfType<EventTriggerSystem>();
             if (eventTriggerSystem == null)
@@ -385,13 +375,12 @@ namespace OVGU.VAR.VRResist
         {
             Debug.Log("[MessageHandler] Showing math task");
 
-            string difficulty = msg.content.Length > 0 ? msg.content[0] : "medium";
-            string timeLimit = msg.content.Length > 1 ? msg.content[1] : "60";
-
-            // Use new simplified direct method call
             if (eventTriggerSystem != null)
             {
-                eventTriggerSystem.ShowMathTask(difficulty, timeLimit);
+                if (Enum.TryParse(msg.content[0], out ENUM_TaskDifficulty parsedNValue) == true)
+                {
+                    eventTriggerSystem.ShowMathTask(parsedNValue);
+                }
             }
             else
             {
@@ -406,10 +395,21 @@ namespace OVGU.VAR.VRResist
         private void HandleNBackTask(EventMessage msg)
         {
             Debug.Log("[MessageHandler] Showing n-back task");
+            int nValue = 0;
+            int timeLimit = 60; // default to 60 seconds
 
-            string nValue = msg.content.Length > 0 ? msg.content[0] : "2";
-            diff timeLimit = msg.content.Length > 1 ? msg.content[1] : "60";
+            if (Enum.TryParse(msg.content[0], out ENUM_TaskDifficulty parsedNValue) == true)
+            {
+                nValue = GetNBackFromDifficulty(parsedNValue);
+            }
 
+            if (Enum.TryParse(msg.content[1], out ENUM_TaskDifficulty parsedTime) == true)
+            {
+                timeLimit = GetTimeFromDifficulty(parsedTime);
+            }
+
+
+            // transfrom diff to time 
             // Use new simplified direct method call
             if (eventTriggerSystem != null)
             {
@@ -418,6 +418,43 @@ namespace OVGU.VAR.VRResist
             else
             {
                 Debug.LogError("[MessageHandler] EventTriggerSystem not assigned!");
+            }
+        }
+
+        /// <summary>
+        /// Convert difficulty enum to time in seconds
+        /// </summary>
+        /// <param name="difficulty"></param>
+        /// <returns></returns>
+        private int GetTimeFromDifficulty(ENUM_TaskDifficulty difficulty)
+        {
+            switch (difficulty)
+            {
+                case ENUM_TaskDifficulty.EASY:
+                    return 60; // 1 minute
+                case ENUM_TaskDifficulty.MEDIUM:
+                    return 40; // 3 minutes
+                case ENUM_TaskDifficulty.HARD:
+                    return 20; // 5 minutes
+                default:
+                    Debug.LogWarning($"[MessageHandler] Unknown difficulty level: {difficulty}, defaulting to medium (3 minutes)");
+                    return 3; // Default to medium if unknown
+            }
+        }
+
+        private int GetNBackFromDifficulty(ENUM_TaskDifficulty difficulty)
+        {
+            switch (difficulty)
+            {
+                case ENUM_TaskDifficulty.EASY:
+                    return 1; // 1-back
+                case ENUM_TaskDifficulty.MEDIUM:
+                    return 2; // 2-back
+                case ENUM_TaskDifficulty.HARD:
+                    return 3; // 3-back
+                default:
+                    Debug.LogWarning($"[MessageHandler] Unknown difficulty level: {difficulty}, defaulting to medium (2-back)");
+                    return 2; // Default to medium if unknown
             }
         }
 

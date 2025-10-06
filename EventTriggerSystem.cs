@@ -460,13 +460,16 @@ namespace OVGU.VAR.VRResist
         /// <summary>
         /// Show math task - Direct method call
         /// </summary>
-        public void ShowMathTask(string difficulty = "medium", string timeLimit = "60")
+        public void ShowMathTask(ENUM_TaskDifficulty difficulty)
         {
+
+            //mathTaskManager.ShowTask(difficulty, timeLimit);
             if (mathTaskManager != null)
             {
                 // Assuming MathTaskManager has a method to show tasks
-                mathTaskManager.SetDifficulty(1);
-                Debug.Log($"[EventTriggerSystem] Showing math task: {difficulty}, {timeLimit}s");
+                mathTaskManager.StartSession(difficulty);
+                Debug.Log($"[EventTriggerSystem] Showing math task: {difficulty}");
+
             }
             else
             {
@@ -477,12 +480,12 @@ namespace OVGU.VAR.VRResist
         /// <summary>
         /// Show N-Back task - Direct method call
         /// </summary>
-        public void ShowNBackTask(string nValue = "2", string timeLimit = "60")
+        public void ShowNBackTask(int nValue = 2, int timeLimit = 60)
         {
             if (nBackTaskManager != null)
             {
                 // Assuming NBackTask has a method to show tasks
-                nBackTaskManager.StartTask(int.Parse(nValue), int.Parse(timeLimit));
+                nBackTaskManager.StartTask(nValue, timeLimit);
                 Debug.Log($"[EventTriggerSystem] Showing N-Back task: N={nValue}, {timeLimit}s");
             }
             else
