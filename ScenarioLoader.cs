@@ -29,11 +29,6 @@ namespace OVGU.VAR.VRResist
 
         private int currentInfoTextIndex = 0;
 
-        private int currentDifficulty;
-
-
-
-
 
         [System.Serializable]
         public class StudySetupResponse
@@ -76,11 +71,6 @@ namespace OVGU.VAR.VRResist
             return scenarioData;
         }
 
-        public int GetCurrentDifficulty()
-        {
-            return currentDifficulty;
-        }
-
         /// <summary>
         /// Load scenario data and apply it to scene components
         /// </summary>
@@ -103,17 +93,6 @@ namespace OVGU.VAR.VRResist
             // Apply scenario data to EventTriggerSystem
             ApplyToEventTriggerSystem();
 
-            //load current difficulty from playerprefs
-            string difficultyStr = PlayerPrefs.GetString("LastDifficultyUsed", "0");
-            if (int.TryParse(difficultyStr, out currentDifficulty))
-            {
-                Debug.Log($"[ScenarioLoader] Loaded difficulty: {currentDifficulty}");
-            }
-            else
-            {
-                Debug.LogWarning($"[ScenarioLoader] Invalid difficulty value: {difficultyStr}");
-            }
-            currentDifficulty = int.Parse(difficultyStr);
 
             if (enableDetailedLogging)
                 Debug.Log($"[ScenarioLoader] Successfully loaded scenario: {scenarioData.scenarioName}");
