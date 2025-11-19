@@ -159,6 +159,7 @@ namespace OVGU.VAR.VRResist
                    messageType == "REQUEST_STUDY_SETUP" ||
                    messageType == "SCENARIO_CHANGE" ||
                    messageType == "SET_INFO_TEXT" ||
+                   messageType == "PHONE_CALL_INCOMING" ||
                    messageType == "OPEN_QUESTIONNAIRE";
         }
 
@@ -221,6 +222,10 @@ namespace OVGU.VAR.VRResist
                     HandleSetInfoText(msg);
                     break;
 
+                case "PHONE_CALL_INCOMING":
+                    HandlePhoneCallIncoming(msg);
+                    break;
+
                 case "OPEN_QUESTIONNAIRE":
                     HandleOpenQuestionnaire(msg);
                     break;
@@ -241,6 +246,13 @@ namespace OVGU.VAR.VRResist
         private void HandleSetInfoText(EventMessage msg)
         {
             eventTriggerSystem.SetInfoText();
+        }
+
+        private void HandlePhoneCallIncoming(EventMessage msg)
+        {
+            Debug.Log("[MessageHandler] Handling PHONE_CALL_INCOMING command");
+
+            eventTriggerSystem.TriggerPhoneCallIncoming();
         }
 
         /// <summary>

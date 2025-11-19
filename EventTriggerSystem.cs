@@ -436,6 +436,20 @@ namespace OVGU.VAR.VRResist
             currentInfoTextIndex++;
         }
 
+        public void TriggerPhoneCallIncoming()
+        {
+            Debug.Log("[EventTriggerSystem] Triggering phone call incoming event");
+            AudioClip phoneCallSound = Resources.Load<AudioClip>("Audio/PhoneCallSound");
+            GameObject.Find("PhoneCallSound").GetComponent<AudioSource>().PlayOneShot(phoneCallSound);
+
+            // Here you would implement the logic to show the phone call UI in VR
+            // For example, enabling a phone call panel or playing a ringtone sound
+
+            // Example placeholder logic:
+            // phoneCallUI.SetActive(true);
+            // phoneRingtoneAudioSource.Play();
+        }
+
         /// <summary>
         /// Make an NPC play an audio clip - Direct method call
         /// </summary>
