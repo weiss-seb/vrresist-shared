@@ -205,6 +205,13 @@ namespace OVGU.VAR.VRResist
             StudyLogger.Instance.WriteLineToLog("Changing to Scenario: " + (scenarioDropdown.value + 1).ToString());
         }
 
+        public void SendPhoneCallIncomingCommand()
+        {
+            var message = new EventMessage("PHONE_CALL_INCOMING", new string[] { });
+            SendMessageToHMD(message);
+            Debug.Log($"[TabletEventControl] Sent PHONE_CALL_INCOMING command");
+        }
+
         public void AdaptUIForScenario()
         {
             int dropdownIndex = scenarioDropdown.value;
@@ -291,9 +298,16 @@ namespace OVGU.VAR.VRResist
         {
             if (showMathTaskButton != null)
             {
-                showMathTaskButton.onClick.AddListener(() => SendTaskCommand("SMATH_TASK", new string[] { Difficulty.ToString() }));
+                showMathTaskButton.onClick.AddListener(() => SendTaskCommand("MATH_TASK", new string[] { Difficulty.ToString() }));
                 var buttonText = showMathTaskButton.GetComponentInChildren<TMPro.TextMeshProUGUI>();
                 if (buttonText != null) buttonText.text = "Nächste Rechenaufgabe";
+            }
+
+            if (showNBackTaskButton != null)
+            {
+                showNBackTaskButton.onClick.AddListener(() => SendTaskCommand("NBACK_TASK", new string[] { Difficulty.ToString() }));
+                var buttonText = showNBackTaskButton.GetComponentInChildren<TMPro.TextMeshProUGUI>();
+                if (buttonText != null) buttonText.text = "Nächste N-Back Aufgabe";
             }
 
             if (endStudyButton != null)
@@ -330,6 +344,7 @@ namespace OVGU.VAR.VRResist
             SendMessageToHMD(message);
             Debug.Log($"[TabletEventControl] Sent NPC_TALK: {npcName} says {audioClip}");
         }
+
 
         /// <summary>
         /// Send task command to HMD
