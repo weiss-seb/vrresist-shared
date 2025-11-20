@@ -47,7 +47,7 @@ MonoBehaviour:
   - '6b) Das tut nichts zur Sache! '
   - 6c) Sprache verschlagen?
   - 7) Gerade mal Mindestanforderungen!
-  chefarztTalkEmotions: 040000000700000003000000030000000500000002000000020000000300000008000000020000000300000007000000
+  chefarztTalkEmotions: 040000000700000003000000030000000500000002000000020000000300000006000000020000000300000007000000
   kollegeAudioClips: []
   kollegeAudioLabels: []
   kollegeTalkEmotions: 
