@@ -38,8 +38,9 @@ namespace OVGU.VAR.VRResist
             }
             else
             {
-                // if not, set default values
-                inputField.text = "10.51.14.177:8125";
+                // Use discovered IP instead of hardcoded value
+                string discoveredIP = GetDiscoveredServerIP();
+                inputField.text = discoveredIP + ":8125";
             }
 
             // intially hide error message
@@ -77,12 +78,13 @@ namespace OVGU.VAR.VRResist
             gameObject.SetActive(false);
             //textureReceiver.IP = serverIp;
 
-            // save ip and port to playerprefs
+            // save ip and port to playerprefs using actual connected IP
             try
             {
-                PlayerPrefs.SetString(KEY_IPADDRESS, "192.168.178.39");
+                PlayerPrefs.SetString(KEY_IPADDRESS, serverIp);
                 PlayerPrefs.SetInt(KEY_PORT, port);
                 PlayerPrefs.Save();
+                Debug.Log($"[ConnectionPrompt] Saved connection details: {serverIp}:{port}");
             }
             catch (Exception e)
             {
@@ -95,6 +97,60 @@ namespace OVGU.VAR.VRResist
         {
             errorMessage.text = "Couldn't connect to VR App";
             errorMessage.gameObject.SetActive(true);
+        }
+
+        /// <summary>
+        /// Discover server IP using the same logic as WebSocketClient
+        /// </summary>
+        private string GetDiscoveredServerIP()
+        {
+            try
+            {
+                var host = System.Net.Dns.GetHostEntry(System.Net.Dns.GetHostName());
+
+                // First pass: Look for non-loopback, non-link-local IPv4 addresses
+                foreach (var ip in host.AddressList)
+                {
+                    if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                    {
+                        string ipString = ip.ToString();
+
+                        // Skip loopback addresses (127.x.x.x)
+                        if (ipString.StartsWith("127."))
+                            continue;
+
+                        // Skip link-local addresses (169.254.x.x)
+                        if (ipString.StartsWith("169.254."))
+                            continue;
+
+                        // This is a valid network IP address
+                        Debug.Log($"[ConnectionPrompt] Found network IP for default: {ipString}");
+                        return ipString;
+                    }
+                }
+
+                // Second pass: If no network IP found, accept any IPv4 except loopback
+                foreach (var ip in host.AddressList)
+                {
+                    if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                    {
+                        string ipString = ip.ToString();
+                        if (!ipString.StartsWith("127."))
+                        {
+                            Debug.LogWarning($"[ConnectionPrompt] Using fallback IP for default: {ipString}");
+                            return ipString;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.LogError($"[ConnectionPrompt] Could not discover server IP: {ex.Message}");
+            }
+
+            // Last resort: return a reasonable default
+            Debug.LogWarning("[ConnectionPrompt] No network IP found, using default placeholder");
+            return "192.168.1.100"; // Common network range as placeholder
         }
 
         static (string ipAddress, int port) ExtractIpAndPort(string urlString)

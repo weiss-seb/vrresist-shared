@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -34,7 +35,12 @@ public class ServerBroadcaster : MonoBehaviour
 
     private void BroadcastPresence()
     {
-        IPEndPoint endPoint = new IPEndPoint(IPAddress.Broadcast, broadcastPort);
+        // Use multicast address for better cross-network discovery
+        IPAddress multicastAddress = IPAddress.Parse("224.0.0.251"); // mDNS multicast address
+        IPEndPoint multicastEndPoint = new IPEndPoint(multicastAddress, broadcastPort);
+
+        // Also keep broadcast for local network compatibility
+        IPEndPoint broadcastEndPoint = new IPEndPoint(IPAddress.Broadcast, broadcastPort);
 
         while (isBroadcasting)
         {
@@ -45,13 +51,31 @@ public class ServerBroadcaster : MonoBehaviour
 
             try
             {
-                udpClient.Send(data, data.Length, endPoint);
-                //Todo: Find a way to stop broadcasting when connection is established
-                //Debug.Log($"Broadcasting presence: {message}");
+                // Try multicast first (better for cross-network)
+                try
+                {
+                    udpClient.Send(data, data.Length, multicastEndPoint);
+                    Debug.Log($"[ServerBroadcaster] Multicast sent: {message}");
+                }
+                catch (SocketException e)
+                {
+                    Debug.LogWarning($"[ServerBroadcaster] Multicast failed: {e.Message}");
+                }
+
+                // Fallback to broadcast for local network
+                try
+                {
+                    udpClient.Send(data, data.Length, broadcastEndPoint);
+                    Debug.Log($"[ServerBroadcaster] Broadcast sent: {message}");
+                }
+                catch (SocketException e)
+                {
+                    Debug.LogWarning($"[ServerBroadcaster] Broadcast failed: {e.Message}");
+                }
             }
-            catch (SocketException e)
+            catch (Exception e)
             {
-                Debug.LogError($"Broadcast failed: {e.Message}");
+                Debug.LogError($"[ServerBroadcaster] Discovery failed: {e.Message}");
             }
 
             Thread.Sleep(2000); // Broadcast every 2 seconds

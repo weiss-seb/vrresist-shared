@@ -189,11 +189,39 @@ public class WebSocketClient : MonoBehaviour
         try
         {
             var host = Dns.GetHostEntry(Dns.GetHostName());
+
+            // First pass: Look for non-loopback, non-link-local IPv4 addresses
             foreach (var ip in host.AddressList)
             {
                 if (ip.AddressFamily == AddressFamily.InterNetwork)
                 {
-                    return ip.ToString();
+                    string ipString = ip.ToString();
+
+                    // Skip loopback addresses (127.x.x.x)
+                    if (ipString.StartsWith("127."))
+                        continue;
+
+                    // Skip link-local addresses (169.254.x.x)
+                    if (ipString.StartsWith("169.254."))
+                        continue;
+
+                    // This is a valid network IP address
+                    Debug.Log($"[WSClient] Found network IP: {ipString}");
+                    return ipString;
+                }
+            }
+
+            // Second pass: If no network IP found, accept any IPv4 except loopback
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == AddressFamily.InterNetwork)
+                {
+                    string ipString = ip.ToString();
+                    if (!ipString.StartsWith("127."))
+                    {
+                        Debug.LogWarning($"[WSClient] Using fallback IP (may be link-local): {ipString}");
+                        return ipString;
+                    }
                 }
             }
         }
@@ -201,6 +229,9 @@ public class WebSocketClient : MonoBehaviour
         {
             Debug.LogError($"[WSClient] Could not get local IP: {ex.Message}");
         }
+
+        // Last resort: return loopback
+        Debug.LogWarning("[WSClient] No network IP found, falling back to loopback (127.0.0.1)");
         return "127.0.0.1";
     }
 

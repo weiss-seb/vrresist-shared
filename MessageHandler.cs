@@ -13,7 +13,7 @@ namespace OVGU.VAR.VRResist
     /// Processes messages from remote tablet and executes corresponding actions in HMD
     /// </summary>
 
-    #region EditoFields
+    #region EditorFields
     public class MessageHandler : MonoBehaviour
     {
 

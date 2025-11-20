@@ -1,4 +1,5 @@
 using UnityEngine;
+using System;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -43,6 +44,19 @@ namespace OVGU.VAR.VRResist
             try
             {
                 udpClient = new UdpClient(broadcastPort);
+
+                // Join multicast group for better cross-network discovery
+                try
+                {
+                    IPAddress multicastAddress = IPAddress.Parse("224.0.0.251");
+                    udpClient.JoinMulticastGroup(multicastAddress);
+                    Debug.Log("[ClientDiscovery] Joined multicast group for discovery");
+                }
+                catch (Exception e)
+                {
+                    Debug.LogWarning($"[ClientDiscovery] Failed to join multicast group: {e.Message}");
+                }
+
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, broadcastPort);
 
                 while (isDiscovering)
@@ -52,7 +66,7 @@ namespace OVGU.VAR.VRResist
 
                     if (message.StartsWith("SERVER_HERE:"))
                     {
-                        Debug.Log($"Discovered server broadcast: {message}");
+                        Debug.Log($"[ClientDiscovery] Discovered server: {message} from {remoteEndPoint}");
                         string[] parts = message.Split(':');
                         if (parts.Length == 3)
                         {
@@ -69,12 +83,22 @@ namespace OVGU.VAR.VRResist
             catch (SocketException e)
             {
                 // This can happen when the client is closed.
-                if (isDiscovering) Debug.LogError($"Discovery failed: {e.Message}");
+                if (isDiscovering) Debug.LogError($"[ClientDiscovery] Discovery failed: {e.Message}");
             }
             finally
             {
                 if (udpClient != null)
                 {
+                    try
+                    {
+                        // Leave multicast group before closing
+                        IPAddress multicastAddress = IPAddress.Parse("224.0.0.251");
+                        udpClient.DropMulticastGroup(multicastAddress);
+                    }
+                    catch (Exception e)
+                    {
+                        Debug.LogWarning($"[ClientDiscovery] Failed to leave multicast group: {e.Message}");
+                    }
                     udpClient.Close();
                 }
             }
