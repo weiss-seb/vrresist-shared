@@ -9,6 +9,7 @@ using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.SceneManagement;
 using OVGU.VAR.VRResist;
+using TextureSendReceive;
 
 [Serializable]
 public class MessageEvent : UnityEvent<String>
@@ -187,7 +188,7 @@ public class TCPServer : MonoBehaviour
         try
         {
             using (var stream = connectedTcpClient.GetStream())
-            using (var reader = new StreamReader(stream, Encoding.UTF8))
+            using (var reader = new StreamReader(stream, System.Text.Encoding.UTF8))
             {
                 while (isRunning && connectedTcpClient.Connected)
                 {
@@ -236,7 +237,7 @@ public class TCPServer : MonoBehaviour
             NetworkStream stream = connectedTcpClient.GetStream();
             if (stream.CanWrite)
             {
-                byte[] data = Encoding.UTF8.GetBytes(message + "\n");
+                byte[] data = System.Text.Encoding.UTF8.GetBytes(message + "\n");
                 stream.Write(data, 0, data.Length);
                 stream.Flush();
                 Debug.Log("[TCPServer] Sent message: " + message);
@@ -346,19 +347,48 @@ public class TCPServer : MonoBehaviour
         // Notify tablet about scene change
         OnSceneChanged?.Invoke(scene.name);
 
-        // Send basic scene change notification to tablet
-        currentMessageHandler = FindObjectOfType<MessageHandler>();
-
-
-        if (currentMessageHandler != null)
+        // if not scene index 0 
+        if (scene.buildIndex == 0)
         {
-            Debug.Log("[TCPServer] Found MessageHandler in new scene.");
-            currentMessageHandler.sendMessageEvent.AddListener(SendMessageToClient);
-            messageEvent.AddListener(currentMessageHandler.OnReceive);
+            return;
         }
-        else
         {
-            Debug.LogWarning("[TCPServer] No MessageHandler found in new scene.");
+
+            // Send basic scene change notification to tablet
+            currentMessageHandler = FindObjectOfType<MessageHandler>();
+
+            _TextureReceiver networkTexture = FindObjectOfType<_TextureReceiver>();
+            if (networkTexture != null)
+            {
+                Debug.Log("[TCPServer] Found NetworkTexture in new scene. Initializing stream.");
+                networkTexture.SetServerIP(GetConnectedClientInfo());
+                networkTexture.InitStream();
+            }
+            else
+            {
+                Debug.LogWarning("[TCPServer] No NetworkTexture found in new scene.");
+            }
+
+
+            if (currentMessageHandler != null)
+            {
+                Debug.Log("[TCPServer] Found MessageHandler in new scene.");
+                currentMessageHandler.sendMessageEvent.AddListener(SendMessageToClient);
+                messageEvent.AddListener(currentMessageHandler.OnReceive);
+            }
+            else
+            {
+                Debug.LogWarning("[TCPServer] No MessageHandler found in new scene.");
+            }
+        }
+    }
+
+    private void OnSceneUnloaded(Scene scene)
+    {
+        _TextureReceiver networkTexture = FindObjectOfType<_TextureReceiver>();
+        if (networkTexture != null)
+        {
+            networkTexture.CloseClient();
         }
     }
 
