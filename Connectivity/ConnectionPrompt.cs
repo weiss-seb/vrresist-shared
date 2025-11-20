@@ -76,7 +76,6 @@ namespace OVGU.VAR.VRResist
         {
             // hide connection prompt
             gameObject.SetActive(false);
-            //textureReceiver.IP = serverIp;
 
             // save ip and port to playerprefs using actual connected IP
             try

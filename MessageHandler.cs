@@ -311,6 +311,9 @@ namespace OVGU.VAR.VRResist
                 case "chat":
                     HandleChat(msg);
                     break;
+                case "webcamIp":
+                    HandleWebcamIp(msg);
+                    break;
 
                 default:
                     // Fallback to legacy event system for unknown messages
@@ -649,6 +652,23 @@ namespace OVGU.VAR.VRResist
             {
                 debugText.text = $"Chat: {msg.content[0]}";
             }
+        }
+
+        /// <summary>
+        /// Handle webcam IP request from client - send server IP back for webcam streaming
+        /// </summary>
+        private void HandleWebcamIp(EventMessage msg)
+        {
+            Debug.Log("[MessageHandler] Client requesting server IP for webcam streaming");
+
+            // Get server's IP address
+            string serverIP = TCPServer.Instance.GetCurrentIP();
+
+            // Send server IP back to client for TextureReceiver configuration
+            EventMessage response = new EventMessage("serverIp", new string[] { serverIP });
+            SendEventMessageToClient(response);
+
+            Debug.Log($"[MessageHandler] Sent server IP to client for webcam streaming: {serverIP}");
         }
 
         /// <summary>
