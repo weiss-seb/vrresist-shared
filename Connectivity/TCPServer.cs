@@ -149,8 +149,14 @@ public class TCPServer : MonoBehaviour
         try
         {
             tcpListener = new TcpListener(IPAddress.Any, port);
+
+            // Enable socket reuse to prevent "address already in use" errors
+            tcpListener.Server.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, true);
+
             tcpListener.Start();
             Debug.Log($"[TCPServer] Server is listening on port {port}");
+            Debug.Log($"[TCPServer] Server IP: {GetCurrentIP()}");
+            Debug.Log($"[TCPServer] Waiting for client connections...");
 
             while (isRunning)
             {
