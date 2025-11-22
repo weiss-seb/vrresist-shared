@@ -42,8 +42,9 @@ public class WebSocketClient : MonoBehaviour
 
             Debug.Log("[WSClient] Connection successful.");
 
-            // Automatically send webcam IP request for streaming setup
-            SendCameraRequest();
+            //save IP for use in texturestreaming
+            PlayerPrefs.SetString("IP", serverIp);
+            PlayerPrefs.Save();
 
             OnConnected?.Invoke(serverIp);
         }
@@ -154,13 +155,6 @@ public class WebSocketClient : MonoBehaviour
         SendEventMessage(msg);
     }
 
-    public void SendCameraRequest()
-    {
-        string webcamIp = GetLocalIp();
-        EventMessage ipMsg = new EventMessage("webcamIp", new string[] { webcamIp });
-        SendEventMessage(ipMsg);
-    }
-
 
     void Update()
     {
@@ -171,12 +165,6 @@ public class WebSocketClient : MonoBehaviour
             {
                 string msg = messageQueue.Dequeue();
                 EventMessage eventMessage = JsonUtility.FromJson<EventMessage>(msg);
-
-                // Handle serverIp message for webcam streaming
-                if (eventMessage.type == "serverIp" && eventMessage.content.Length > 0)
-                {
-                    HandleServerIpMessage(eventMessage.content[0]);
-                }
 
                 OnMessageReceive.Invoke(msg);
             }
@@ -189,36 +177,6 @@ public class WebSocketClient : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Handle server IP message for webcam streaming configuration
-    /// </summary>
-    private void HandleServerIpMessage(string serverIP)
-    {
-        Debug.Log($"[WSClient] Received server IP for webcam streaming: {serverIP}");
-
-        // Find all TextureReceiver components and configure them
-        var textureReceivers = FindObjectsOfType<TextureSendReceive.TextureReceiver>();
-
-        foreach (var receiver in textureReceivers)
-        {
-            receiver.SetServerIP(serverIP);
-            Debug.Log($"[WSClient] Configured TextureReceiver with server IP: {serverIP}");
-        }
-
-        // Find ExampleReceiver components and trigger stream initialization
-        var exampleReceivers = FindObjectsOfType<TextureSendReceive.ExampleReceiver>();
-
-        foreach (var exampleReceiver in exampleReceivers)
-        {
-            exampleReceiver.OnStartCameraStream();
-            Debug.Log($"[WSClient] Started camera stream for ExampleReceiver");
-        }
-
-        if (textureReceivers.Length == 0 && exampleReceivers.Length == 0)
-        {
-            Debug.LogWarning("[WSClient] No TextureReceiver or ExampleReceiver components found for webcam streaming");
-        }
-    }
 
     public void SendEventMessage(EventMessage msg)
     {

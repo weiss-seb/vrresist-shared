@@ -236,6 +236,7 @@ namespace OVGU.VAR.VRResist
             }
         }
 
+
         private void HandleOpenQuestionnaire(EventMessage msg)
         {
             Debug.Log("[MessageHandler] Opening Questionnaire Scene");
