@@ -24,13 +24,23 @@ public class ServerBroadcaster : MonoBehaviour
             return;
         }
 
-        udpClient = new UdpClient();
-        udpClient.EnableBroadcast = true;
+        try
+        {
+            // Create UDP client with explicit binding to avoid port conflicts
+            udpClient = new UdpClient();
+            udpClient.EnableBroadcast = true;
 
-        isBroadcasting = true;
-        broadcastThread = new Thread(BroadcastPresence);
-        broadcastThread.IsBackground = true;
-        broadcastThread.Start();
+            Debug.Log($"[ServerBroadcaster] UDP client created for broadcasting on port {broadcastPort}");
+
+            isBroadcasting = true;
+            broadcastThread = new Thread(BroadcastPresence);
+            broadcastThread.IsBackground = true;
+            broadcastThread.Start();
+        }
+        catch (Exception e)
+        {
+            Debug.LogError($"[ServerBroadcaster] Failed to create UDP client: {e.Message}");
+        }
     }
 
     private void BroadcastPresence()

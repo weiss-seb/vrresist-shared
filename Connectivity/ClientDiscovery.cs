@@ -43,7 +43,9 @@ namespace OVGU.VAR.VRResist
         {
             try
             {
+                Debug.Log($"[ClientDiscovery] Starting UDP listener on port {broadcastPort}");
                 udpClient = new UdpClient(broadcastPort);
+                udpClient.Client.ReceiveTimeout = 5000; // 5 second timeout to prevent indefinite blocking
 
                 // Join multicast group for better cross-network discovery
                 try
@@ -58,32 +60,52 @@ namespace OVGU.VAR.VRResist
                 }
 
                 IPEndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, broadcastPort);
+                Debug.Log("[ClientDiscovery] Listening for server broadcasts...");
 
                 while (isDiscovering)
                 {
-                    byte[] data = udpClient.Receive(ref remoteEndPoint);
-                    string message = Encoding.UTF8.GetString(data);
-
-                    if (message.StartsWith("SERVER_HERE:"))
+                    try
                     {
-                        Debug.Log($"[ClientDiscovery] Discovered server: {message} from {remoteEndPoint}");
-                        string[] parts = message.Split(':');
-                        if (parts.Length == 3)
+                        byte[] data = udpClient.Receive(ref remoteEndPoint);
+                        string message = Encoding.UTF8.GetString(data);
+
+                        Debug.Log($"[ClientDiscovery] Received UDP message: {message} from {remoteEndPoint}");
+
+                        if (message.StartsWith("SERVER_HERE:"))
                         {
-                            discoveredIp = parts[1];
-                            if (int.TryParse(parts[2], out discoveredPort))
+                            Debug.Log($"[ClientDiscovery] Discovered server: {message} from {remoteEndPoint}");
+                            string[] parts = message.Split(':');
+                            if (parts.Length == 3)
                             {
-                                serverFound = true;
-                                isDiscovering = false; // Stop listening once found
+                                discoveredIp = parts[1];
+                                if (int.TryParse(parts[2], out discoveredPort))
+                                {
+                                    Debug.Log($"[ClientDiscovery] Server found at {discoveredIp}:{discoveredPort}");
+                                    serverFound = true;
+                                    isDiscovering = false; // Stop listening once found
+                                    break;
+                                }
                             }
                         }
+                    }
+                    catch (SocketException e) when (e.SocketErrorCode == SocketError.TimedOut)
+                    {
+                        // Timeout is expected, continue listening
+                        Debug.Log("[ClientDiscovery] UDP receive timeout, continuing to listen...");
                     }
                 }
             }
             catch (SocketException e)
             {
-                // This can happen when the client is closed.
-                if (isDiscovering) Debug.LogError($"[ClientDiscovery] Discovery failed: {e.Message}");
+                if (isDiscovering)
+                {
+                    Debug.LogError($"[ClientDiscovery] Discovery failed: {e.Message}");
+                    Debug.LogError($"[ClientDiscovery] Socket error code: {e.SocketErrorCode}");
+                }
+            }
+            catch (Exception e)
+            {
+                if (isDiscovering) Debug.LogError($"[ClientDiscovery] Unexpected error: {e.Message}");
             }
             finally
             {
@@ -94,12 +116,14 @@ namespace OVGU.VAR.VRResist
                         // Leave multicast group before closing
                         IPAddress multicastAddress = IPAddress.Parse("224.0.0.251");
                         udpClient.DropMulticastGroup(multicastAddress);
+                        Debug.Log("[ClientDiscovery] Left multicast group");
                     }
                     catch (Exception e)
                     {
                         Debug.LogWarning($"[ClientDiscovery] Failed to leave multicast group: {e.Message}");
                     }
                     udpClient.Close();
+                    Debug.Log("[ClientDiscovery] UDP client closed");
                 }
             }
         }
