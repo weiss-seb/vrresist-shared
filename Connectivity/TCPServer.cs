@@ -389,16 +389,6 @@ public class TCPServer : MonoBehaviour
         }
     }
 
-    private void OnSceneUnloaded(Scene scene)
-    {
-        _TextureReceiver networkTexture = FindObjectOfType<_TextureReceiver>();
-        if (networkTexture != null)
-        {
-            networkTexture.CloseClient();
-        }
-    }
-
-
     /// <summary>
     /// Send basic scenario information to tablet
     /// </summary>
