@@ -44,7 +44,7 @@ MonoBehaviour:
   - 3b) (sarkastisch) Mach bloss nicht zu viel!
   - 4a) Du solltest dich mehr einbringen!
   - 4b) Mach wenigstens die Visite morgen!
-  kollegeTalkEmotions: 050000000400000008000000030000000200000002000000010000000700000008000000
+  kollegeTalkEmotions: 030000000400000003000000030000000200000002000000030000000200000004000000
   patientAudioClips: []
   patientAudioLabels: []
   patientTalkEmotions: 
