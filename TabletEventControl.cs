@@ -467,26 +467,6 @@ namespace OVGU.VAR.VRResist
             RequestStudySetup();
             Debug.Log("[TabletEventControl] Scene loaded, requesting camera stream");
 
-
-            var receiver = FindObjectOfType<_TextureReceiver>();
-            if (receiver != null)
-            {
-                receiver.StopReception();
-            }
-
-            Debug.Log("[WSClient] Scene loaded. Restarting texture reception.");
-
-            if (receiver != null)
-            {
-                receiver.InitStream();
-            }
-
-            // Also handle ExampleReceiver if present
-            var exampleReceiver = FindObjectOfType<ExampleReceiver>();
-            if (exampleReceiver != null)
-            {
-                exampleReceiver.OnStartCameraStream();
-            }
         }
 
         /// <summary>

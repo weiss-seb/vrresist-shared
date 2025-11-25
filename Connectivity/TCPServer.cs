@@ -358,6 +358,10 @@ public class TCPServer : MonoBehaviour
         {
             return;
         }
+
+        // Send basic scene change notification to tablet
+        currentMessageHandler = FindObjectOfType<MessageHandler>();
+
         {
 
             if (currentMessageHandler != null)
