@@ -467,6 +467,7 @@ namespace OVGU.VAR.VRResist
             RequestStudySetup();
             Debug.Log("[TabletEventControl] Scene loaded, requesting camera stream");
 
+
         }
 
         /// <summary>
