@@ -360,22 +360,6 @@ public class TCPServer : MonoBehaviour
         }
         {
 
-            // Send basic scene change notification to tablet
-            currentMessageHandler = FindObjectOfType<MessageHandler>();
-
-            _TextureReceiver networkTexture = FindObjectOfType<_TextureReceiver>();
-            if (networkTexture != null)
-            {
-                Debug.Log("[TCPServer] Found NetworkTexture in new scene. Initializing stream.");
-                networkTexture.SetServerIP(GetConnectedClientInfo());
-                networkTexture.InitStream();
-            }
-            else
-            {
-                Debug.LogWarning("[TCPServer] No NetworkTexture found in new scene.");
-            }
-
-
             if (currentMessageHandler != null)
             {
                 Debug.Log("[TCPServer] Found MessageHandler in new scene.");

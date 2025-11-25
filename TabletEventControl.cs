@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using System;
-using Unity.VisualScripting;
-
+using TextureSendReceive;
 namespace OVGU.VAR.VRResist
 {
     /// <summary>
@@ -449,9 +447,7 @@ namespace OVGU.VAR.VRResist
                     PopulateScenarioDropdown(message);
                     break;
                 case "SCENE_LOADED":
-                    SendCameraStreamRequest();
-                    RequestStudySetup();
-                    Debug.Log("[TabletEventControl] Scene loaded, requesting camera stream");
+                    HandleNewSceneLoaded();
                     break;
                 case "STUDY_SETUP_RESPONSE":
                     Debug.Log("[TabletEventControl] Received study setup response");
@@ -460,6 +456,36 @@ namespace OVGU.VAR.VRResist
                 default:
                     // Handle other message types as needed
                     break;
+            }
+        }
+
+
+        private void HandleNewSceneLoaded()
+        {
+
+            SendCameraStreamRequest();
+            RequestStudySetup();
+            Debug.Log("[TabletEventControl] Scene loaded, requesting camera stream");
+
+
+            var receiver = FindObjectOfType<_TextureReceiver>();
+            if (receiver != null)
+            {
+                receiver.StopReception();
+            }
+
+            Debug.Log("[WSClient] Scene loaded. Restarting texture reception.");
+
+            if (receiver != null)
+            {
+                receiver.InitStream();
+            }
+
+            // Also handle ExampleReceiver if present
+            var exampleReceiver = FindObjectOfType<ExampleReceiver>();
+            if (exampleReceiver != null)
+            {
+                exampleReceiver.OnStartCameraStream();
             }
         }
 

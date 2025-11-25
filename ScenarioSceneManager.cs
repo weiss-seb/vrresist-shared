@@ -5,6 +5,7 @@ using TMPro;
 using UnityEngine.Events;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using TextureSendReceive;
 
 namespace OVGU.VAR.VRResist
 {
@@ -137,7 +138,12 @@ namespace OVGU.VAR.VRResist
             // find scnenario mapping
             var mapping = scenarioMappings.Find(m => m.scenarioId == scenarioId.ToString());
 
+            var statusmuessage = new EventMessage("SCENE_REQUESTED", new string[] { mapping.sceneName });
+            string json = JsonUtility.ToJson(statusmuessage);
+            tcpServer.SendMessageToClient(json);
+
             StartCoroutine(LoadSceneCoroutine(mapping));
+
         }
 
         internal void LoadWaitingRoomScene()
@@ -178,6 +184,13 @@ namespace OVGU.VAR.VRResist
         {
             isLoading = true;
 
+            // Stop texture transmission before loading new scene
+            var textureSender = FindObjectOfType<_TextureSender>();
+            if (textureSender != null)
+            {
+                Debug.Log("[ScenarioSceneManager] Stopping texture transmission before scene load");
+                textureSender.StopTransmission();
+            }
 
             if (enableDetailedLogging)
                 Debug.Log($"[ScenarioSceneManager] Loading scenario {mapping.scenarioId}: {mapping.scenarioTitle}");
@@ -403,4 +416,3 @@ public class ScenarioSceneData
     [Tooltip("Information texts displayed to user during the scenario")]
     public string[] scenarioInfoTexts;
 }
-
