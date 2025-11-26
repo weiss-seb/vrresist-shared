@@ -184,14 +184,6 @@ namespace OVGU.VAR.VRResist
         {
             isLoading = true;
 
-            // Stop texture transmission before loading new scene
-            var textureSender = FindObjectOfType<_TextureSender>();
-            if (textureSender != null)
-            {
-                Debug.Log("[ScenarioSceneManager] Stopping texture transmission before scene load");
-                textureSender.StopTransmission();
-            }
-
             if (enableDetailedLogging)
                 Debug.Log($"[ScenarioSceneManager] Loading scenario {mapping.scenarioId}: {mapping.scenarioTitle}");
 

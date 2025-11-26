@@ -20,6 +20,8 @@ namespace OVGU.VAR.VRResist
         [SerializeField] TMP_Dropdown scenarioDropdown;
         [SerializeField] TMP_InputField participantIDText;
         [SerializeField] Button startButton;
+        //a public event to signal scenario switching
+        public UnityEngine.Events.UnityEvent SwitchingScenarioEvent;
         private int currentScenarioIndex = 0;
 
         [Header("Pre-configured UI Sections")]
