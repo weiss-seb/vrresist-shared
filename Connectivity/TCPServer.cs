@@ -353,12 +353,6 @@ public class TCPServer : MonoBehaviour
         // Notify tablet about scene change
         OnSceneChanged?.Invoke(scene.name);
 
-        // if not scene index 0 
-        if (scene.buildIndex == 0)
-        {
-            return;
-        }
-
         // Send basic scene change notification to tablet
         currentMessageHandler = FindObjectOfType<MessageHandler>();
 
