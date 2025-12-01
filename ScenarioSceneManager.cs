@@ -2,10 +2,9 @@ using System.Collections;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using TMPro;
-using UnityEngine.Events;
 using System.Collections.Generic;
 using UnityEngine.UI;
-using TextureSendReceive;
+
 
 namespace OVGU.VAR.VRResist
 {
@@ -106,7 +105,7 @@ namespace OVGU.VAR.VRResist
 
             if (XRUser == null)
             {
-                XRUser = GameObject.FindWithTag("XRUser");
+                XRUser = GameObject.Find("XRPlatformControl").GetComponent<XRPlatformControl>().GetPlatformRig();
             }
 
             this.gameObject.transform.position = XRUser.transform.position;

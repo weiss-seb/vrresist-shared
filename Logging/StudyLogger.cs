@@ -128,7 +128,7 @@ namespace OVGU.VAR.VRResist
 
                     switch (SceneManager.GetActiveScene().buildIndex)
                     {
-                        case 0: //DISCLAIMER
+                        case :
                             writer.WriteLine("Device Language set to : " + Application.systemLanguage);
                             break;
                         case 2: // PSQ PRE
