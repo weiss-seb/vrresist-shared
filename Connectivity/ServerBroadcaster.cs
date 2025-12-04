@@ -65,7 +65,7 @@ public class ServerBroadcaster : MonoBehaviour
                 try
                 {
                     udpClient.Send(data, data.Length, multicastEndPoint);
-                    Debug.Log($"[ServerBroadcaster] Multicast sent: {message}");
+
                 }
                 catch (SocketException e)
                 {
@@ -76,7 +76,7 @@ public class ServerBroadcaster : MonoBehaviour
                 try
                 {
                     udpClient.Send(data, data.Length, broadcastEndPoint);
-                    Debug.Log($"[ServerBroadcaster] Broadcast sent: {message}");
+
                 }
                 catch (SocketException e)
                 {

@@ -18,6 +18,8 @@ namespace OVGU.VAR.VRResist
         [Header("Scene Configuration")]
         [Tooltip("Name of the Unity scene to load for this scenario")]
         public string sceneName;
+        [Tooltip("World Transforms for Cameras")]
+        public CameraPosition[] cameraPositions;
 
         [Header("Chefarzt Audio Configuration")]
         [Tooltip("Audio clip names (identifiers) - actual AudioClip files are stored on HMD NPCController")]
@@ -114,6 +116,14 @@ namespace OVGU.VAR.VRResist
                 case "mother": return motherAudioLabels;
                 default: return new string[0];
             }
+        }
+
+        ///<summary>
+        /// Get canera positions for tablet UI
+        /// </summary>
+        public CameraPosition[] GetCameraPositions()
+        {
+            return cameraPositions ?? new CameraPosition[0];
         }
 
         /// <summary>
@@ -219,5 +229,12 @@ namespace OVGU.VAR.VRResist
         }
 
         #endregion
+    }
+
+    [System.Serializable]
+    public struct CameraPosition
+    {
+        public Vector3 position;
+        public Vector3 rotation;
     }
 }

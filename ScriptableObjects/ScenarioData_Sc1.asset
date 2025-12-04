@@ -27,6 +27,15 @@ MonoBehaviour:
   - "Ohne ausf\xFChrliche Anamnese und k\xF6rperliche Untersuchung k\xF6nnen Sie
     diese Frage nicht beantworten."
   sceneName: scenario1scene
+  cameraPositions:
+  - position: {x: -1.6, y: 0, z: 3.15}
+    rotation: {x: 0, y: 58.817, z: 0}
+  - position: {x: 1.32, y: 0.27, z: 0}
+    rotation: {x: 16.129, y: 0, z: 0}
+  - position: {x: 4.08, y: 0, z: 4.84}
+    rotation: {x: 17.84, y: -109.844, z: 0}
+  - position: {x: 1.05, y: -0.05, z: 0.451}
+    rotation: {x: 17.828, y: -186.614, z: 0.451}
   chefarztAudioClips: []
   chefarztAudioLabels: []
   chefarztTalkEmotions: 

@@ -294,7 +294,7 @@ public class TCPServer : MonoBehaviour
 
                 // Skip APIPA addresses and other non-routable ranges if needed
                 // This is a valid network IP address
-                Debug.Log($"[TCPServer] Found network IP: {ipString}");
+
                 return ipString;
             }
         }

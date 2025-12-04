@@ -4,6 +4,7 @@ using UnityEngine.SceneManagement;
 using TMPro;
 using System.Collections.Generic;
 using UnityEngine.UI;
+using System.Linq;
 
 
 namespace OVGU.VAR.VRResist
@@ -23,6 +24,8 @@ namespace OVGU.VAR.VRResist
         [SerializeField] Slider loadingProgressSlider;
         [SerializeField] TMP_Text progressText;
         [SerializeField] TMP_Text scenarioInfoText;
+
+        private CameraControl cameraControl;
 
         [Header("Network")]
         [SerializeField] TCPServer tcpServer;
@@ -87,20 +90,26 @@ namespace OVGU.VAR.VRResist
                 Debug.LogWarning("[TCPServer] Duplicate TCPServer instance found. Destroying duplicate.");
                 Destroy(gameObject);
             }
+
+
+
         }
 
         void Start()
         {
             ShowLoadingScreen();
             DontDestroyOnLoad(this.gameObject);
+
+            if (cameraControl != null)
+                cameraControl.SetCameraPositions(scenarioLoader.GetScenarioData().GetCameraPositions().ToList());
         }
 
         void OnSceneLoaded(Scene scene, LoadSceneMode mode)
         {
             Debug.Log("[ScenarioSceneManager] OnSceneLoaded called");
 
-            scenarioLoader = FindObjectOfType<ScenarioLoader>();
-            tcpServer = FindObjectOfType<TCPServer>();
+            scenarioLoader = FindFirstObjectByType<ScenarioLoader>();
+            tcpServer = FindFirstObjectByType<TCPServer>();
             GameObject.Find("MessageHandler").GetComponent<MessageHandler>().scenarioSceneManager = this;
 
             if (XRUser == null)
@@ -111,6 +120,8 @@ namespace OVGU.VAR.VRResist
             this.gameObject.transform.position = XRUser.transform.position;
 
             ShowLoadingScreen();
+            // cameraControl = FindFirstObjectByType<CameraControl>();
+            // cameraControl.SetCameraPositions(scenarioLoader.GetScenarioData().GetCameraPositions().ToList());
 
             if (enableDetailedLogging)
                 Debug.Log($"[ScenarioSceneManager] Scene loaded: {scene.name} in mode {mode}");
