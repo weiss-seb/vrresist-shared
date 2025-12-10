@@ -32,6 +32,13 @@ namespace OVGU.VAR.VRResist
         [SerializeField] GameObject studyControlPanel;
         [SerializeField] GameObject difficultySettingsPanel;
 
+        [Header("Warning Popup")]
+        [SerializeField] GameObject warningPopup;
+        [SerializeField] TMP_Text warningText;
+        [SerializeField] Button newIdButton;
+        [SerializeField] Button useAnywayButton;
+        [SerializeField] CanvasGroup mainUICanvasGroup;
+
 
         [Header("Task Action Buttons - Assign in Unity Editor")]
         [SerializeField] Button PhoneRingingButton;
@@ -80,19 +87,28 @@ namespace OVGU.VAR.VRResist
 
         void Start()
         {
+
+            // Debug: Check all relevant PlayerPrefs
+            Debug.Log($"[PlayerPrefs Debug] CurrentParticipantID exists: {PlayerPrefs.HasKey("CurrentParticipantID")}");
+            if (PlayerPrefs.HasKey("CurrentParticipantID"))
+            {
+                Debug.Log($"[PlayerPrefs Debug] CurrentParticipantID value: {PlayerPrefs.GetInt("CurrentParticipantID")}");
+            }
+
             SetupStudyControlButtons();
+            SetupWarningPopup();
             Difficulty = ENUM_TaskDifficulty.None; // Default difficulty
             scenarioDropdown.onValueChanged.AddListener(CheckScenarioID);
         }
 
         #region QoL checks for scenario loading
 
+        #region User ID and Data Safety net
         public void CheckParticipantID()
         {
             //participant id text cant be empty and must be a number. if invalid, color the textfield background red and fade to white over 1 second
             if (string.IsNullOrEmpty(participantIDText.text) || !int.TryParse(participantIDText.text, out int result))
             {
-                Debug.Log(participantIDText.text);
                 var colors = participantIDText.GetComponentInParent<Image>().color;
                 colors = Color.red;
                 participantIDText.GetComponentInParent<Image>().color = colors;
@@ -104,9 +120,17 @@ namespace OVGU.VAR.VRResist
                 return;
             }
 
+            if (CheckParticipantIDExisting())
+            {
+                ShowWarningPopup("Es wurde bereits eine Teilnehmer-ID gespeichert. Möchten Sie diese verwenden oder eine neue eingeben?");
+                scenarioDropdown.interactable = false;
+                startButton.interactable = false;
+            }
+
             else
             {
                 Debug.Log("[TabletEventControl] Valid Participant ID entered");
+                SetParticipantID();
                 scenarioDropdown.interactable = true;
             }
 
@@ -114,6 +138,115 @@ namespace OVGU.VAR.VRResist
                 Debug.Log("[TabletEventControl] Participant ID checked");
 
         }
+
+        void SetupWarningPopup()
+        {
+            if (warningPopup != null)
+            {
+                warningPopup.SetActive(false);
+            }
+
+            if (newIdButton != null)
+            {
+                newIdButton.onClick.AddListener(OnNewIdButtonClicked);
+            }
+
+            if (useAnywayButton != null)
+            {
+                useAnywayButton.onClick.AddListener(OnUseAnywayButtonClicked);
+            }
+        }
+
+        private bool CheckParticipantIDExisting()
+        {
+            if (PlayerPrefs.HasKey("CurrentParticipantID"))
+            {
+                Debug.Log("ID already exists)");
+                int savedID = PlayerPrefs.GetInt("CurrentParticipantID");
+                participantIDText.text = savedID.ToString();
+
+                return true;
+            }
+            // Show warning popup
+
+            else
+            {
+                if (enableDetailedLogging)
+                    Debug.Log("[TabletEventControl] No existing Participant ID found");
+                return false;
+            }
+        }
+
+
+
+        void ShowWarningPopup(string message)
+        {
+            if (warningPopup == null)
+            {
+                Debug.LogError("[TabletEventControl] Warning popup is not assigned!");
+                return;
+            }
+
+            // Disable main UI interaction
+            if (mainUICanvasGroup != null)
+            {
+                mainUICanvasGroup.interactable = false;
+                mainUICanvasGroup.alpha = 0.5f; // Dim the UI to show it's disabled
+            }
+
+            // Set warning text and show popup
+            if (warningText != null)
+            {
+                warningText.text = message;
+            }
+
+            warningPopup.SetActive(true);
+        }
+
+        void HideWarningPopup()
+        {
+            if (warningPopup != null)
+            {
+                warningPopup.SetActive(false);
+            }
+
+            // Re-enable main UI interaction
+            if (mainUICanvasGroup != null)
+            {
+                mainUICanvasGroup.interactable = true;
+                mainUICanvasGroup.alpha = 1f;
+            }
+        }
+
+        void OnNewIdButtonClicked()
+        {
+            // Clear the participant ID and let user enter a new one
+            participantIDText.text = "";
+            PlayerPrefs.DeleteKey("CurrentParticipantID");
+            PlayerPrefs.Save();
+
+            scenarioDropdown.interactable = false;
+            startButton.interactable = false;
+
+            HideWarningPopup();
+
+            if (enableDetailedLogging)
+                Debug.Log("[TabletEventControl] User chose to enter new ID");
+        }
+
+        void OnUseAnywayButtonClicked()
+        {
+            // Use the existing ID
+            scenarioDropdown.interactable = true;
+            SetParticipantID();
+            HideWarningPopup();
+
+            if (enableDetailedLogging)
+                Debug.Log("[TabletEventControl] User chose to use existing ID");
+        }
+
+
+        #endregion
 
         private void CheckScenarioID(int scenarioIndex)
         {
@@ -193,6 +326,9 @@ namespace OVGU.VAR.VRResist
             //Send a message to HMD to load up the selected scenario
             if (webSocketClient != null)
             {
+                var idMessage = new EventMessage("SET_PARTICIPANT_ID", new string[] { participantIDText.text });
+                webSocketClient.SendEventMessage(idMessage);
+
                 var message = new EventMessage("SCENARIO_CHANGE", new string[] { (scenarioDropdown.value + 1).ToString(), nameof(Difficulty) });
                 webSocketClient.SendEventMessage(message);
                 Debug.Log($"[TabletEventControl] Starting scenario:");
