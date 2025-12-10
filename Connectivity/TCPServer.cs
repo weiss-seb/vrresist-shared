@@ -294,7 +294,7 @@ public class TCPServer : MonoBehaviour
 
                 // Skip APIPA addresses and other non-routable ranges if needed
                 // This is a valid network IP address
-                Debug.Log($"[TCPServer] Found network IP: {ipString}");
+
                 return ipString;
             }
         }
@@ -352,12 +352,6 @@ public class TCPServer : MonoBehaviour
 
         // Notify tablet about scene change
         OnSceneChanged?.Invoke(scene.name);
-
-        // if not scene index 0 
-        if (scene.buildIndex == 0)
-        {
-            return;
-        }
 
         // Send basic scene change notification to tablet
         currentMessageHandler = FindObjectOfType<MessageHandler>();

@@ -10,18 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5ed04d7a4526f8f4b8dbeb12f73e7866, type: 3}
-  m_Name: NULL_DATA_FOR_WAITINGROOM
+  m_Name: NULL_DATA_FOR_CALC_TEST
   m_EditorClassIdentifier: 
-  scenarioId: 0
-  scenarioName: Waiting Room
-  scenarioDescription: "Mit dieser Studie untersuchen wir die M\xF6glichkeiten, mit
-    denen in VR ein Stresslevel erzeugt werden. Damit sollen in Zukunft moderne Trainingsszenarien
-    erstellt werden. "
+  scenarioId: 5
+  scenarioName: StressTest
+  scenarioDescription: Mit dem folgenden Experiment wollen wir durch Rechenaufgaben
+    bei Ihnen mentale Last zu erzeugen!
   scenarioInfoTexts: []
-  sceneName: WaitingRoom
+  sceneName: Rechnen
   cameraPositions:
-  - position: {x: 0, y: 9.25, z: 0}
-    rotation: {x: 7, y: 7, z: 0}
+  - position: {x: -1.6, y: 0, z: 3.15}
+    rotation: {x: 16.29, y: 0, z: 0}
+  - position: {x: 1.32, y: 0.27, z: 0}
+    rotation: {x: 16.129, y: 0, z: 0}
+  - position: {x: 4.08, y: 0, z: 4.84}
+    rotation: {x: 17.84, y: -109.844, z: 0}
+  - position: {x: 1.05, y: -0.05, z: 0.451}
+    rotation: {x: 17.828, y: 186.514, z: 0.451}
   chefarztAudioClips: []
   chefarztAudioLabels: []
   chefarztTalkEmotions: 
@@ -43,4 +48,4 @@ MonoBehaviour:
   cameraTags: []
   audioMessages:
   - 
-  startPosition: {x: 0, y: 0, z: 0}
+  startPosition: {x: 11.85, y: 0, z: 11.98}

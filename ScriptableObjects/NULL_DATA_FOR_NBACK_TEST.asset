@@ -10,14 +10,23 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5ed04d7a4526f8f4b8dbeb12f73e7866, type: 3}
-  m_Name: NULL_DATA_FOR_STRESSTEST
+  m_Name: NULL_DATA_FOR_NBACK_TEST
   m_EditorClassIdentifier: 
   scenarioId: 5
   scenarioName: StressTest
-  scenarioDescription: "Mit dem folgenden Experiment wollen wir die F\xE4higkeit
-    der VR untersuchen, bei Ihnen mentale Last zu erzeugen!"
+  scenarioDescription: Mit dem folgenden Experiment wollen wir durch einen N-Back
+    Test bei Ihnen mentale Last zu erzeugen!
   scenarioInfoTexts: []
-  sceneName: StressTest
+  sceneName: N-Back
+  cameraPositions:
+  - position: {x: -1.6, y: 0, z: 3.15}
+    rotation: {x: 16.29, y: 0, z: 0}
+  - position: {x: 1.32, y: 0.27, z: 0}
+    rotation: {x: 16.129, y: 0, z: 0}
+  - position: {x: 4.08, y: 0, z: 4.84}
+    rotation: {x: 17.84, y: -109.844, z: 0}
+  - position: {x: 1.05, y: -0.05, z: 0.451}
+    rotation: {x: 17.828, y: 186.514, z: 0.451}
   chefarztAudioClips: []
   chefarztAudioLabels: []
   chefarztTalkEmotions: 
@@ -37,8 +46,6 @@ MonoBehaviour:
   characterTags: []
   availablePositions: []
   cameraTags: []
-  loadingImage: {fileID: 0}
-  loadingTip: Lade Warteraum...
-  messages: []
   audioMessages:
   - 
+  startPosition: {x: 11.85, y: 0, z: 11.98}

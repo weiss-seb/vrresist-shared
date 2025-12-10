@@ -28,6 +28,11 @@ MonoBehaviour:
   - "Es ist 15:42h, sie m\xFCssen los, sonst gibt es \xC4rger mit dem Chef. Bitte
     verabschieden Sie sich von den Angeh\xF6rigen und vertr\xF6sten Sie sie auf sp\xE4ter."
   sceneName: scenario2scene
+  cameraPositions:
+  - position: {x: -0.39, y: -0.55, z: 491}
+    rotation: {x: 8.332, y: 34.545, z: 0}
+  - position: {x: 3.68, y: 0.06, z: 10.93}
+    rotation: {x: 19.024, y: -158.22, z: 0}
   chefarztAudioClips: []
   chefarztAudioLabels: []
   chefarztTalkEmotions: 

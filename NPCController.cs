@@ -14,7 +14,6 @@ public class NPCController : MonoBehaviour
     public Animator animator;
     public string nameForIdentification;
     public MessageHandler messageHandler;
-    private EventLogger logger;
 
     [Header("Audio Configuration")]
     [SerializeField]

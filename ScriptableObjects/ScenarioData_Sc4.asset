@@ -21,6 +21,11 @@ MonoBehaviour:
   scenarioInfoTexts:
   - "Herr M\xFCller hatte einen komplikativen Verlauf nach Pankreatektomie \u2026"
   sceneName: scenario4scene
+  cameraPositions:
+  - position: {x: -0.12, y: 1.19, z: 5.79}
+    rotation: {x: 22.832, y: 175.093, z: 0}
+  - position: {x: 0.86, y: 0.82, z: 0}
+    rotation: {x: 30.864, y: -23.4, z: 0}
   chefarztAudioClips: []
   chefarztAudioLabels: []
   chefarztTalkEmotions: 

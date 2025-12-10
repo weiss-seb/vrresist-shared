@@ -513,6 +513,11 @@ namespace OVGU.VAR.VRResist
         /// </summary>
         public void ChangeCameraView(int cameraIndex)
         {
+            if (!cameraController)
+            {
+                cameraController = FindFirstObjectByType<CameraControl>();
+            }
+
             if (cameraController != null)
             {
                 cameraController.SetCameraToIndex(cameraIndex);
@@ -521,7 +526,7 @@ namespace OVGU.VAR.VRResist
             }
             else
             {
-                Debug.LogWarning("[EventTriggerSystem] CameraController not assigned!");
+                Debug.LogWarning("[EventTriggerSystem] CameraController not in scene!");
             }
         }
 

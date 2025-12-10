@@ -21,6 +21,11 @@ MonoBehaviour:
   scenarioInfoTexts:
   - "Sie k\xF6nnen sich an keine Hinweise erinnern."
   sceneName: scenario3scene
+  cameraPositions:
+  - position: {x: -2.215, y: 1.58, z: -1.832}
+    rotation: {x: 0, y: 40.676, z: 0}
+  - position: {x: 5.29, y: 2.6, z: 3}
+    rotation: {x: 15.925, y: -125, z: 0.072}
   chefarztAudioClips:
   - AssistentenSelbstEinschaetzung
   - LeistungNIchtUeberzeugend
