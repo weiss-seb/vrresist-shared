@@ -42,7 +42,7 @@ namespace OVGU.VAR.VRResist.Logging
 
             string logpath = Application.persistentDataPath + "/Log/";
             // eventLogPath = logpath + date.ToString("dd-MM-yyyy_HH-mm-ss") + "-Events" + ".csv";
-            tlxResultsPath = logpath + date.ToString("dd-MM-yyyy_HH-mm-ss") + "-Questionnaire" + ".csv";
+            tlxResultsPath = logpath + +date.ToString("dd-MM-yyyy_HH-mm-ss") + "-Questionnaire" + ".csv";
             mannequinResultsPath = logpath + date.ToString("dd-MM-yyyy_HH-mm-ss") + "-Questionnaire" + ".csv";
             mathTaskResultsPath = logpath + date.ToString("dd-MM-yyyy_HH-mm-ss") + "-MathTask" + ".csv";
             nBackResultsPath = logpath + date.ToString("dd-MM-yyyy_HH-mm-ss") + "-NBack" + ".csv";

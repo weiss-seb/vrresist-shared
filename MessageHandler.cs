@@ -3,6 +3,7 @@ using TMPro;
 using UnityEngine.SceneManagement;
 using System;
 using UnityEngine.Events;
+using Unity.Services.Lobbies.Models;
 
 
 
@@ -214,6 +215,11 @@ namespace OVGU.VAR.VRResist
                 case "SCENARIO_CHANGE":
                     HandleScenarioChange(msg);
                     break;
+                case "SET_PARTICIPANT_ID":
+                    // This can be handled by the ScenarioLoader or another appropriate system
+                    Debug.Log("[MessageHandler] SET_PARTICIPANT_ID not implemented yet");
+                    HandleParticipantIDSet(msg);
+                    break;
 
                 case "REQUEST_STUDY_SETUP":
                     HandleStudySetupRequest(msg);
@@ -236,6 +242,13 @@ namespace OVGU.VAR.VRResist
             }
         }
 
+        private void HandleParticipantIDSet(EventMessage msg)
+        {
+            PlayerPrefs.SetString("ParticipantID", msg.content[0]);
+            PlayerPrefs.Save();
+            Debug.Log($"[MessageHandler] Received Participant ID - set to: {msg.content[0]}");
+
+        }
 
         private void HandleOpenQuestionnaire(EventMessage msg)
         {
@@ -593,7 +606,7 @@ namespace OVGU.VAR.VRResist
         /// </summary>
         private void HandleStudySetupRequest(EventMessage msg)
         {
-            Debug.Log("[MessageHandler] Handling study setup request");
+            Debug.Log("[MessageHandler] Handling study setup request for participant ID" + msg.content[0]);
 
             if (scenarioLoader == null)
             {
