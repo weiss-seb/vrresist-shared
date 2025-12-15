@@ -138,6 +138,14 @@ namespace OVGU.VAR.VRResist
                 return;
             }
 
+            // Auto-discover MathTaskManager if not assigned
+            if (mathTaskManager == null)
+            {
+                mathTaskManager = FindObjectOfType<MathTaskManager>();
+                if (mathTaskManager != null && enableDetailedLogging)
+                    Debug.Log("[EventTriggerSystem] Auto-discovered MathTaskManager");
+            }
+
             // Get character references from ScenarioLoader
             GetCharacterReferences();
 
