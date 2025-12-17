@@ -48,4 +48,4 @@ MonoBehaviour:
   cameraTags: []
   audioMessages:
   - 
-  startPosition: {x: 11.85, y: 0, z: 11.98}
+  startPosition: {x: 60, y: 0, z: 60}

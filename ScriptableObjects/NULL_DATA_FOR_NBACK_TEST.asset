@@ -46,6 +46,5 @@ MonoBehaviour:
   characterTags: []
   availablePositions: []
   cameraTags: []
-  audioMessages:
-  - 
-  startPosition: {x: 11.85, y: 0, z: 11.98}
+  audioMessages: []
+  startPosition: {x: 300, y: 0, z: 15}
