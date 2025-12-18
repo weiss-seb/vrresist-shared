@@ -110,6 +110,7 @@ namespace OVGU.VAR.VRResist
         public void OnReceive(string msgJson)
         {
             Debug.Log($"[MessageHandler] Received JSON: {msgJson}");
+            Debug.Log(msgJson);
 
             try
             {
@@ -594,7 +595,7 @@ namespace OVGU.VAR.VRResist
         /// </summary>
         private void HandleStudySetupRequest(EventMessage msg)
         {
-            Debug.Log("[MessageHandler] Handling study setup request for participant ID" + msg.content[0]);
+            Debug.Log("[MessageHandler] Handling study setup request");
 
             if (scenarioLoader == null)
             {
