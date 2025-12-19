@@ -99,6 +99,11 @@ namespace OVGU.VAR.VRResist
             SetupWarningPopup();
             Difficulty = ENUM_TaskDifficulty.None; // Default difficulty
             scenarioDropdown.onValueChanged.AddListener(CheckScenarioID);
+
+            FileTransfer.Instance.OnTransferStarted.AddListener(() => ShowProgressUI());
+            FileTransfer.Instance.OnTransferProgress.AddListener((p) => UpdateProgressBar(p));
+            FileTransfer.Instance.OnTransferComplete.AddListener((msg) => ShowSuccess(msg));
+            FileTransfer.Instance.OnTransferError.AddListener((err) => ShowError(err));
         }
 
         #region QoL checks for scenario loading
@@ -987,6 +992,11 @@ namespace OVGU.VAR.VRResist
                 Debug.LogWarning("[TabletEventControl] WebSocketClient is null!");
             }
 
+        }
+
+        public void IntitiateFileTransfer()
+        {
+            FileTransfer.Instance.StartFileTransfer();
         }
 
         /// <summary>
