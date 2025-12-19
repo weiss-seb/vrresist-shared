@@ -16,108 +16,167 @@ namespace OVGU.VAR.VRResist.Logging
 
     public class EventLogger : MonoBehaviour
     {
-        private string tlxResultsPath, mathTaskResultsPath, nBackResultsPath, mannequinResultsPath;
+        private string currentSceneFolderPath;
+        private string sceneResultsPath;
+        private string questionnaireResultsPath;
 
         private static EventLogger instance;
         Dictionary<string, string> resultList = new Dictionary<string, string>();
 
+        private string currentParticipantId;
+        private int currentSceneNumber = -1;
 
         // Static singleton property
         public static EventLogger Instance
         {
             // Here we use the ?? operator, to return 'instance' if 'instance' does not equal null
             // otherwise we assign instance to a new component and return that
-            get { return instance ?? (instance = new GameObject("Singleton").AddComponent<EventLogger>()); }
+            get { return instance ?? (instance = new GameObject("EventLogger").AddComponent<EventLogger>()); }
+        }
+
+        void Awake()
+        {
+            if (instance != null && instance != this)
+            {
+                Destroy(gameObject);
+                return;
+            }
+            instance = this;
+            DontDestroyOnLoad(gameObject);
         }
 
         // Start is called before the first frame update
         void Start()
         {
-            var date = DateTime.Now;
-            string participantId = PlayerPrefs.GetString("ParticipantID", "unknown");
-
-            if (!Directory.Exists(Application.persistentDataPath + "/Log"))
+            // Ensure base log directory exists
+            string baseLogPath = Path.Combine(Application.persistentDataPath, "Log");
+            if (!Directory.Exists(baseLogPath))
             {
-                Directory.CreateDirectory(Application.persistentDataPath + "/Log");
+                Directory.CreateDirectory(baseLogPath);
+            }
+        }
+
+        /// <summary>
+        /// Initializes logging for a specific scene. Call this when entering a new scenario scene.
+        /// Creates folder structure: Log/ParticipantID/Scene{sceneNumber}/
+        /// </summary>
+        /// <param name="sceneNumber">The scenario scene number (1-6)</param>
+        public void InitializeSceneLogging(int sceneNumber)
+        {
+            currentParticipantId = PlayerPrefs.GetString("ParticipantID", "unknown");
+            currentSceneNumber = sceneNumber;
+
+            // Create folder structure: Log/ParticipantID/Scene{sceneNumber}/
+            string baseLogPath = Path.Combine(Application.persistentDataPath, "Log");
+            string participantFolder = Path.Combine(baseLogPath, currentParticipantId);
+            currentSceneFolderPath = Path.Combine(participantFolder, $"Scene{sceneNumber}");
+
+            // Create directories if they don't exist
+            if (!Directory.Exists(currentSceneFolderPath))
+            {
+                Directory.CreateDirectory(currentSceneFolderPath);
             }
 
-            string logpath = Application.persistentDataPath + "/Log/";
-            string filePrefix = $"{participantId}_{date.ToString("dd-MM-yyyy_HH-mm-ss")}";
-            
-            tlxResultsPath = logpath + filePrefix + "-Questionnaire" + ".csv";
-            mannequinResultsPath = logpath + filePrefix + "-Questionnaire" + ".csv";
-            mathTaskResultsPath = logpath + filePrefix + "-MathTask" + ".csv";
-            nBackResultsPath = logpath + filePrefix + "-NBack" + ".csv";
+            // Set up file paths
+            sceneResultsPath = Path.Combine(currentSceneFolderPath, "sceneresults.csv");
+            questionnaireResultsPath = Path.Combine(currentSceneFolderPath, "questionnaireresults.csv");
 
+            // Initialize scene results file with headers if it doesn't exist
+            if (!File.Exists(sceneResultsPath))
+            {
+                using (StreamWriter sw = new StreamWriter(sceneResultsPath, false))
+                {
+                    sw.WriteLine("timestamp, logType, difficulty, operation, firstNumber, secondNumber, userAnswer, correctAnswer, timeTakenMs, isCorrect, elapsedTimeMs, remainingTimeMs, userChoice");
+                }
+            }
 
-            StreamWriter streamWriterTLX = new StreamWriter(tlxResultsPath, true);
-            streamWriterTLX.WriteLine("timestamp, item, result");
-            streamWriterTLX.Close();
+            // Initialize questionnaire results file with headers if it doesn't exist
+            if (!File.Exists(questionnaireResultsPath))
+            {
+                using (StreamWriter sw = new StreamWriter(questionnaireResultsPath, false))
+                {
+                    sw.WriteLine("timestamp, item, result");
+                }
+            }
 
-            StreamWriter streamwriterMannequin = new StreamWriter(mannequinResultsPath, true);
-            streamwriterMannequin.WriteLine("timestamp, item, result");
-            streamwriterMannequin.Close();
+            Debug.Log($"[EventLogger] Initialized logging for Participant {currentParticipantId}, Scene {sceneNumber} at {currentSceneFolderPath}");
+        }
 
-            StreamWriter streamWriterMathTask = new StreamWriter(mathTaskResultsPath, true);
-            streamWriterMathTask.WriteLine("timestamp, difficulty, operation, firstNumber, secondNumber, userAnswer, correctAnswer, timeTakenMs, isCorrect");
-            streamWriterMathTask.Close();
-
-            StreamWriter streamWriterNBack = new StreamWriter(nBackResultsPath, true);
-            streamWriterNBack.WriteLine("timestamp, elapsedTimeMs, remainingTimeMs, userChoice, isCorrect");
-            streamWriterNBack.Close();
+        /// <summary>
+        /// Gets the current scene folder path for external use
+        /// </summary>
+        public string GetCurrentSceneFolderPath()
+        {
+            return currentSceneFolderPath;
         }
 
         public void LogQuestionnaireItem(string index, string value)
         {
-
             if (resultList.ContainsKey(index))
                 resultList[index] = value;
             else
                 resultList.Add(index, value);
         }
 
+        /// <summary>
+        /// Writes all questionnaire results to the questionnaireresults.csv file
+        /// </summary>
         public void WriteResults()
         {
-            //Log the last item
-
-            var date = DateTime.Now;
-            StreamWriter streamWriter = new StreamWriter(tlxResultsPath, true);
-            streamWriter.WriteLine("This file was created at " + date.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss"));
-
-            var results = "";
-            foreach (KeyValuePair<string, string> kvp in resultList)
+            if (string.IsNullOrEmpty(questionnaireResultsPath))
             {
-                results = kvp.Key + "," + kvp.Value + "\n";
-                streamWriter.WriteLine(results);
+                Debug.LogError("[EventLogger] Questionnaire results path not initialized. Call InitializeSceneLogging first.");
+                return;
             }
 
+            var date = DateTime.Now;
+            using (StreamWriter streamWriter = new StreamWriter(questionnaireResultsPath, true))
+            {
+                streamWriter.WriteLine($"# Results written at {date.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss")}");
 
-            streamWriter.Close();
+                foreach (KeyValuePair<string, string> kvp in resultList)
+                {
+                    var timestamp = DateTime.Now.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss");
+                    streamWriter.WriteLine($"{timestamp}, {kvp.Key}, {kvp.Value}");
+                }
+            }
+
+            Debug.Log($"[EventLogger] Questionnaire results saved to {questionnaireResultsPath}");
             resultList.Clear();
-            Debug.Log("Results saved to " + tlxResultsPath);
         }
 
         /// <summary>
-        /// Logs a string to the specified log file.
+        /// Logs a string to the sceneresults.csv file for task data (MathTask, NBack, etc.)
         /// </summary>
         /// <param name="logType">The type of log (TLX, Mannequin, MathTask, NBackTask)</param>
         /// <param name="message">The message to log</param>
         public void LogToFile(LogType logType, string message)
         {
-            string path = GetPathForLogType(logType);
+            // For questionnaire types, use the questionnaire path
+            string path;
+            if (logType == LogType.TLX || logType == LogType.Mannequin)
+            {
+                path = questionnaireResultsPath;
+            }
+            else
+            {
+                // MathTask and NBackTask go to sceneresults.csv
+                path = sceneResultsPath;
+            }
 
             if (string.IsNullOrEmpty(path))
             {
-                Debug.LogError($"[EventLogger] Path not initialized for log type: {logType}");
+                Debug.LogError($"[EventLogger] Path not initialized for log type: {logType}. Call InitializeSceneLogging first.");
                 return;
             }
 
             try
             {
                 var timestamp = DateTime.Now.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss");
-                StreamWriter streamWriter = new StreamWriter(path, true);
-                streamWriter.WriteLine($"{timestamp}, {message}");
-                streamWriter.Close();
+                using (StreamWriter streamWriter = new StreamWriter(path, true))
+                {
+                    streamWriter.WriteLine($"{timestamp}, {logType}, {message}");
+                }
                 Debug.Log($"[EventLogger] Logged to {logType}: {message}");
             }
             catch (Exception e)
@@ -134,13 +193,11 @@ namespace OVGU.VAR.VRResist.Logging
             switch (logType)
             {
                 case LogType.TLX:
-                    return tlxResultsPath;
                 case LogType.Mannequin:
-                    return mannequinResultsPath;
+                    return questionnaireResultsPath;
                 case LogType.MathTask:
-                    return mathTaskResultsPath;
                 case LogType.NBackTask:
-                    return nBackResultsPath;
+                    return sceneResultsPath;
                 default:
                     return null;
             }

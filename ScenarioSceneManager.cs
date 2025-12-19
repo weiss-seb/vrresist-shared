@@ -5,6 +5,7 @@ using TMPro;
 using System.Collections.Generic;
 using UnityEngine.UI;
 using System.Linq;
+using OVGU.VAR.VRResist.Logging;
 
 
 namespace OVGU.VAR.VRResist
@@ -143,6 +144,15 @@ namespace OVGU.VAR.VRResist
             {
                 Debug.LogWarning("[ScenarioSceneManager] Already loading a scene, ignoring request");
                 return;
+            }
+
+            // Store the current scenario ID for logging
+            currentScenarioId = scenarioId;
+
+            // Initialize logging for this scenario scene (only for actual scenario scenes 1-6)
+            if (scenarioId >= 1 && scenarioId <= 6)
+            {
+                EventLogger.Instance.InitializeSceneLogging(scenarioId);
             }
 
             // find scnenario mapping
