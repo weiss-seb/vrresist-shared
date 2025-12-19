@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using TextureSendReceive;
+using System;
 namespace OVGU.VAR.VRResist
 {
     /// <summary>
@@ -104,6 +105,26 @@ namespace OVGU.VAR.VRResist
             FileTransfer.Instance.OnTransferProgress.AddListener((p) => UpdateProgressBar(p));
             FileTransfer.Instance.OnTransferComplete.AddListener((msg) => ShowSuccess(msg));
             FileTransfer.Instance.OnTransferError.AddListener((err) => ShowError(err));
+        }
+
+        private void ShowError(string err)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ShowSuccess(string msg)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void UpdateProgressBar(float p)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ShowProgressUI()
+        {
+            throw new NotImplementedException();
         }
 
         #region QoL checks for scenario loading
