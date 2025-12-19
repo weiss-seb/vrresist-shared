@@ -19,6 +19,7 @@ namespace OVGU.VAR.VRResist.Logging
         private string currentSceneFolderPath;
         private string sceneResultsPath;
         private string questionnaireResultsPath;
+        private string mentalLoadResultsPath;
 
         private static EventLogger instance;
         Dictionary<string, string> resultList = new Dictionary<string, string>();
@@ -80,13 +81,14 @@ namespace OVGU.VAR.VRResist.Logging
             // Set up file paths
             sceneResultsPath = Path.Combine(currentSceneFolderPath, "sceneresults.csv");
             questionnaireResultsPath = Path.Combine(currentSceneFolderPath, "questionnaireresults.csv");
+            mentalLoadResultsPath = Path.Combine(currentSceneFolderPath, "mentalload_results.csv");
 
-            // Initialize scene results file with headers if it doesn't exist
+            // Initialize scene results file with headers if it doesn't exist (for scenario scene events)
             if (!File.Exists(sceneResultsPath))
             {
                 using (StreamWriter sw = new StreamWriter(sceneResultsPath, false))
                 {
-                    sw.WriteLine("timestamp, logType, difficulty, operation, firstNumber, secondNumber, userAnswer, correctAnswer, timeTakenMs, isCorrect, elapsedTimeMs, remainingTimeMs, userChoice");
+                    sw.WriteLine("timestamp, eventType, data");
                 }
             }
 
@@ -96,6 +98,15 @@ namespace OVGU.VAR.VRResist.Logging
                 using (StreamWriter sw = new StreamWriter(questionnaireResultsPath, false))
                 {
                     sw.WriteLine("timestamp, item, result");
+                }
+            }
+
+            // Initialize mental load results file with headers if it doesn't exist (MathTask, NBack)
+            if (!File.Exists(mentalLoadResultsPath))
+            {
+                using (StreamWriter sw = new StreamWriter(mentalLoadResultsPath, false))
+                {
+                    sw.WriteLine("timestamp, taskType, difficulty, operation, firstNumber, secondNumber, userAnswer, correctAnswer, timeTakenMs, isCorrect, elapsedTimeMs, remainingTimeMs, userChoice");
                 }
             }
 
@@ -146,23 +157,15 @@ namespace OVGU.VAR.VRResist.Logging
         }
 
         /// <summary>
-        /// Logs a string to the sceneresults.csv file for task data (MathTask, NBack, etc.)
+        /// Logs a string to the appropriate results file based on log type
+        /// - TLX/Mannequin -> questionnaireresults.csv
+        /// - MathTask/NBackTask -> mentalload_results.csv
         /// </summary>
         /// <param name="logType">The type of log (TLX, Mannequin, MathTask, NBackTask)</param>
         /// <param name="message">The message to log</param>
         public void LogToFile(LogType logType, string message)
         {
-            // For questionnaire types, use the questionnaire path
-            string path;
-            if (logType == LogType.TLX || logType == LogType.Mannequin)
-            {
-                path = questionnaireResultsPath;
-            }
-            else
-            {
-                // MathTask and NBackTask go to sceneresults.csv
-                path = sceneResultsPath;
-            }
+            string path = GetPathForLogType(logType);
 
             if (string.IsNullOrEmpty(path))
             {
@@ -186,6 +189,34 @@ namespace OVGU.VAR.VRResist.Logging
         }
 
         /// <summary>
+        /// Logs scene-specific events to sceneresults.csv (for scenario 1-4 scene events)
+        /// </summary>
+        /// <param name="eventType">Type of scene event</param>
+        /// <param name="data">Event data</param>
+        public void LogSceneEvent(string eventType, string data)
+        {
+            if (string.IsNullOrEmpty(sceneResultsPath))
+            {
+                Debug.LogError("[EventLogger] Scene results path not initialized. Call InitializeSceneLogging first.");
+                return;
+            }
+
+            try
+            {
+                var timestamp = DateTime.Now.ToString("yyyy'-'MM'-'dd'T'HH':'mm':'ss");
+                using (StreamWriter streamWriter = new StreamWriter(sceneResultsPath, true))
+                {
+                    streamWriter.WriteLine($"{timestamp}, {eventType}, {data}");
+                }
+                Debug.Log($"[EventLogger] Logged scene event: {eventType}");
+            }
+            catch (Exception e)
+            {
+                Debug.LogError($"[EventLogger] Failed to write scene event: {e.Message}");
+            }
+        }
+
+        /// <summary>
         /// Gets the file path for the specified log type.
         /// </summary>
         private string GetPathForLogType(LogType logType)
@@ -197,7 +228,7 @@ namespace OVGU.VAR.VRResist.Logging
                     return questionnaireResultsPath;
                 case LogType.MathTask:
                 case LogType.NBackTask:
-                    return sceneResultsPath;
+                    return mentalLoadResultsPath;
                 default:
                     return null;
             }
