@@ -153,6 +153,7 @@ namespace OVGU.VAR.VRResist
             if (scenarioId >= 1 && scenarioId <= 6)
             {
                 EventLogger.Instance.InitializeSceneLogging(scenarioId);
+                StudyLogger.Instance.InitializeSceneLogging(scenarioId);
             }
 
             // find scnenario mapping
