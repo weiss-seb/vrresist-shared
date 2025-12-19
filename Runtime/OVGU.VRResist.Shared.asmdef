@@ -1,0 +1,14 @@
+{
+    "name": "OVGU.VRResist.Shared",
+    "rootNamespace": "OVGU.VAR.VRResist",
+    "references": [],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

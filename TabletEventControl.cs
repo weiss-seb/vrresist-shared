@@ -59,6 +59,13 @@ namespace OVGU.VAR.VRResist
         [SerializeField] Button endStudyButton;
         [SerializeField] Button questionnaireButton;
 
+        [Header("File Transfer UI")]
+        [SerializeField] Button downloadLogsButton;
+        [SerializeField] GameObject fileTransferPanel;
+        [SerializeField] Slider fileTransferProgressBar;
+        [SerializeField] TMP_Text fileTransferStatusText;
+        [SerializeField] Button cancelTransferButton;
+
         [Header("Dynamic UI Generation")]
         [Tooltip("Button prefab for dynamically created audio buttons")]
         [SerializeField] GameObject buttonPrefab;
@@ -97,6 +104,7 @@ namespace OVGU.VAR.VRResist
 
             SetupStudyControlButtons();
             SetupWarningPopup();
+            SetupFileTransferUI();
             Difficulty = ENUM_TaskDifficulty.None; // Default difficulty
             scenarioDropdown.onValueChanged.AddListener(CheckScenarioID);
         }
@@ -156,6 +164,188 @@ namespace OVGU.VAR.VRResist
                 useAnywayButton.onClick.AddListener(OnUseAnywayButtonClicked);
             }
         }
+
+        /// <summary>
+        /// Setup file transfer UI and connect to FileTransfer events
+        /// </summary>
+        void SetupFileTransferUI()
+        {
+            // Hide progress panel initially
+            if (fileTransferPanel != null)
+            {
+                fileTransferPanel.SetActive(false);
+            }
+
+            // Setup download button
+            if (downloadLogsButton != null)
+            {
+                downloadLogsButton.onClick.AddListener(OnDownloadLogsClicked);
+            }
+
+            // Setup cancel button
+            if (cancelTransferButton != null)
+            {
+                cancelTransferButton.onClick.AddListener(OnCancelTransferClicked);
+            }
+
+            // Subscribe to FileTransfer events
+            var fileTransfer = FileTransfer.Instance;
+            if (fileTransfer != null)
+            {
+                fileTransfer.OnTransferStarted.AddListener(OnFileTransferStarted);
+                fileTransfer.OnTransferProgress.AddListener(OnFileTransferProgress);
+                fileTransfer.OnTransferComplete.AddListener(OnFileTransferComplete);
+                fileTransfer.OnTransferError.AddListener(OnFileTransferError);
+                Debug.Log("[TabletEventControl] File transfer events connected");
+            }
+            else
+            {
+                Debug.LogWarning("[TabletEventControl] FileTransfer instance not found during setup");
+            }
+        }
+
+        #region File Transfer Event Handlers
+
+        /// <summary>
+        /// Called when download logs button is clicked
+        /// </summary>
+        void OnDownloadLogsClicked()
+        {
+            var fileTransfer = FileTransfer.Instance;
+            if (fileTransfer != null)
+            {
+                fileTransfer.RequestFilesFromHMD();
+                Debug.Log("[TabletEventControl] Requesting log files from HMD...");
+            }
+            else
+            {
+                Debug.LogError("[TabletEventControl] FileTransfer instance not found!");
+                UpdateFileTransferStatus("Fehler: FileTransfer nicht verfügbar");
+            }
+        }
+
+        /// <summary>
+        /// Called when cancel transfer button is clicked
+        /// </summary>
+        void OnCancelTransferClicked()
+        {
+            var fileTransfer = FileTransfer.Instance;
+            if (fileTransfer != null)
+            {
+                fileTransfer.CancelTransfer();
+            }
+        }
+
+        /// <summary>
+        /// Called when file transfer starts
+        /// </summary>
+        void OnFileTransferStarted()
+        {
+            Debug.Log("[TabletEventControl] File transfer started");
+            
+            // Show progress panel
+            if (fileTransferPanel != null)
+            {
+                fileTransferPanel.SetActive(true);
+            }
+
+            // Reset progress bar
+            if (fileTransferProgressBar != null)
+            {
+                fileTransferProgressBar.value = 0f;
+            }
+
+            // Update status text
+            UpdateFileTransferStatus("Download wird gestartet...");
+
+            // Disable download button during transfer
+            if (downloadLogsButton != null)
+            {
+                downloadLogsButton.interactable = false;
+            }
+        }
+
+        /// <summary>
+        /// Called when file transfer progress updates
+        /// </summary>
+        void OnFileTransferProgress(float progress)
+        {
+            // Update progress bar
+            if (fileTransferProgressBar != null)
+            {
+                fileTransferProgressBar.value = progress;
+            }
+
+            // Update status text with percentage
+            int percentage = Mathf.RoundToInt(progress * 100f);
+            UpdateFileTransferStatus($"Download läuft... {percentage}%");
+        }
+
+        /// <summary>
+        /// Called when file transfer completes successfully
+        /// </summary>
+        void OnFileTransferComplete(string message)
+        {
+            Debug.Log($"[TabletEventControl] File transfer complete: {message}");
+
+            // Update status text
+            UpdateFileTransferStatus($"✓ {message}");
+
+            // Re-enable download button
+            if (downloadLogsButton != null)
+            {
+                downloadLogsButton.interactable = true;
+            }
+
+            // Hide progress panel after delay
+            StartCoroutine(HideTransferPanelAfterDelay(3f));
+        }
+
+        /// <summary>
+        /// Called when file transfer encounters an error
+        /// </summary>
+        void OnFileTransferError(string error)
+        {
+            Debug.LogError($"[TabletEventControl] File transfer error: {error}");
+
+            // Update status text with error
+            UpdateFileTransferStatus($"✗ Fehler: {error}");
+
+            // Re-enable download button
+            if (downloadLogsButton != null)
+            {
+                downloadLogsButton.interactable = true;
+            }
+
+            // Hide progress panel after delay
+            StartCoroutine(HideTransferPanelAfterDelay(5f));
+        }
+
+        /// <summary>
+        /// Update the file transfer status text
+        /// </summary>
+        void UpdateFileTransferStatus(string status)
+        {
+            if (fileTransferStatusText != null)
+            {
+                fileTransferStatusText.text = status;
+            }
+        }
+
+        /// <summary>
+        /// Hide the transfer panel after a delay
+        /// </summary>
+        IEnumerator HideTransferPanelAfterDelay(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            
+            if (fileTransferPanel != null)
+            {
+                fileTransferPanel.SetActive(false);
+            }
+        }
+
+        #endregion
 
         private bool CheckParticipantIDExisting()
         {

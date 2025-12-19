@@ -1,0 +1,17 @@
+{
+  "name": "com.ovgu.vrresist-shared",
+  "version": "1.0.0",
+  "displayName": "VRResist Shared",
+  "description": "Shared protocol, data structures, and enums for VRResist VR study application.",
+  "unity": "2022.3",
+  "documentationUrl": "https://github.com/weiss-seb/vrresist-shared",
+  "keywords": [
+    "vr",
+    "study",
+    "protocol"
+  ],
+  "author": {
+    "name": "OVGU VAR Lab",
+    "url": "https://github.com/weiss-seb"
+  }
+}
