@@ -129,6 +129,22 @@ namespace OVGU.VAR.VRResist
         private void ProcessMessage(EventMessage msg)
         {
             Debug.Log($"[MessageHandler] Processing message of type: {msg.type}");
+            
+            // Handle file transfer messages first (routed to FileTransfer component)
+            if (FileTransfer.IsFileTransferMessage(msg.type))
+            {
+                var fileTransfer = FileTransfer.Instance;
+                if (fileTransfer != null)
+                {
+                    fileTransfer.HandleFileTransferMessage(msg);
+                }
+                else
+                {
+                    Debug.LogWarning("[MessageHandler] FileTransfer instance not found for file transfer message!");
+                }
+                return;
+            }
+            
             // Handle new streamlined message types first
             if (IsCoreActionType(msg.type))
             {

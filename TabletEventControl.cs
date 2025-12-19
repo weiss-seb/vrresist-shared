@@ -567,6 +567,21 @@ namespace OVGU.VAR.VRResist
             if (enableDetailedLogging)
                 Debug.Log($"[TabletEventControl] Received message: {message.type}");
 
+            // Handle file transfer messages first (routed to FileTransfer component)
+            if (FileTransfer.IsFileTransferMessage(message.type))
+            {
+                var fileTransfer = FileTransfer.Instance;
+                if (fileTransfer != null)
+                {
+                    fileTransfer.HandleFileTransferMessage(message);
+                }
+                else
+                {
+                    Debug.LogWarning("[TabletEventControl] FileTransfer instance not found for file transfer message!");
+                }
+                return;
+            }
+
             switch (message.type)
             {
                 case "audioClipsListChefarzt":
