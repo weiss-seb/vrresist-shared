@@ -4,6 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
 using TextureSendReceive;
+using System;
 namespace OVGU.VAR.VRResist
 {
     /// <summary>
@@ -107,6 +108,31 @@ namespace OVGU.VAR.VRResist
             SetupFileTransferUI();
             Difficulty = ENUM_TaskDifficulty.None; // Default difficulty
             scenarioDropdown.onValueChanged.AddListener(CheckScenarioID);
+
+            FileTransfer.Instance.OnTransferStarted.AddListener(() => ShowProgressUI());
+            FileTransfer.Instance.OnTransferProgress.AddListener((p) => UpdateProgressBar(p));
+            FileTransfer.Instance.OnTransferComplete.AddListener((msg) => ShowSuccess(msg));
+            FileTransfer.Instance.OnTransferError.AddListener((err) => ShowError(err));
+        }
+
+        private void ShowError(string err)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ShowSuccess(string msg)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void UpdateProgressBar(float p)
+        {
+            throw new NotImplementedException();
+        }
+
+        private void ShowProgressUI()
+        {
+            throw new NotImplementedException();
         }
 
         #region QoL checks for scenario loading
@@ -1177,6 +1203,11 @@ namespace OVGU.VAR.VRResist
                 Debug.LogWarning("[TabletEventControl] WebSocketClient is null!");
             }
 
+        }
+
+        public void IntitiateFileTransfer()
+        {
+            FileTransfer.Instance.StartFileTransfer();
         }
 
         /// <summary>
