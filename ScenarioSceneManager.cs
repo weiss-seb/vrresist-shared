@@ -111,14 +111,43 @@ namespace OVGU.VAR.VRResist
 
             scenarioLoader = FindFirstObjectByType<ScenarioLoader>();
             tcpServer = FindFirstObjectByType<TCPServer>();
-            GameObject.Find("MessageHandler").GetComponent<MessageHandler>().scenarioSceneManager = this;
+            
+            // Safely find and set MessageHandler reference
+            var messageHandlerGO = GameObject.Find("MessageHandler");
+            if (messageHandlerGO != null)
+            {
+                var messageHandler = messageHandlerGO.GetComponent<MessageHandler>();
+                if (messageHandler != null)
+                {
+                    messageHandler.scenarioSceneManager = this;
+                }
+                else
+                {
+                    Debug.LogWarning("[ScenarioSceneManager] MessageHandler component not found on MessageHandler GameObject");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("[ScenarioSceneManager] MessageHandler GameObject not found in scene");
+            }
 
             if (XRUser == null)
             {
-                XRUser = GameObject.Find("XRPlatformControl").GetComponent<XRPlatformControl>().GetPlatformRig();
+                var xrPlatformGO = GameObject.Find("XRPlatformControl");
+                if (xrPlatformGO != null)
+                {
+                    var xrPlatformControl = xrPlatformGO.GetComponent<XRPlatformControl>();
+                    if (xrPlatformControl != null)
+                    {
+                        XRUser = xrPlatformControl.GetPlatformRig();
+                    }
+                }
             }
 
-            this.gameObject.transform.position = XRUser.transform.position;
+            if (XRUser != null)
+            {
+                this.gameObject.transform.position = XRUser.transform.position;
+            }
 
             ShowLoadingScreen();
             // cameraControl = FindFirstObjectByType<CameraControl>();

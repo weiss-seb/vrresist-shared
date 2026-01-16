@@ -63,6 +63,8 @@ public class TCPServer : MonoBehaviour
     private TcpListener tcpListener;
     private Thread tcpListenerThread;
     private TcpClient connectedTcpClient;
+    private NetworkStream clientStream;
+    private readonly object streamLock = new object();
     private bool isRunning;
 
     // Message handling
@@ -71,6 +73,7 @@ public class TCPServer : MonoBehaviour
 
     // Scene management
     private bool isInitialized = false;
+    private MessageHandler previousMessageHandler;
 
     void Awake()
     {
@@ -79,15 +82,15 @@ public class TCPServer : MonoBehaviour
         {
             _instance = this;
             DontDestroyOnLoad(gameObject);
+            SceneManager.sceneLoaded += OnSceneLoaded;
             InitializeTCPServer();
         }
         else if (_instance != this)
         {
             Debug.LogWarning("[TCPServer] Duplicate TCPServer instance found. Destroying duplicate.");
             Destroy(gameObject);
+            return; // Don't register anything for duplicates
         }
-
-        SceneManager.sceneLoaded += OnSceneLoaded;
     }
 
     void Start()
@@ -193,10 +196,14 @@ public class TCPServer : MonoBehaviour
 
         try
         {
-            using (var stream = connectedTcpClient.GetStream())
-            using (var reader = new StreamReader(stream, System.Text.Encoding.UTF8))
+            lock (streamLock)
             {
-                while (isRunning && connectedTcpClient.Connected)
+                clientStream = connectedTcpClient.GetStream();
+            }
+            
+            using (var reader = new StreamReader(clientStream, System.Text.Encoding.UTF8, false, 1024, leaveOpen: true))
+            {
+                while (isRunning && connectedTcpClient != null && connectedTcpClient.Connected)
                 {
                     string message = reader.ReadLine();
                     if (message == null)
@@ -222,6 +229,10 @@ public class TCPServer : MonoBehaviour
         }
         finally
         {
+            lock (streamLock)
+            {
+                clientStream = null;
+            }
             if (connectedTcpClient != null)
             {
                 connectedTcpClient.Close();
@@ -240,19 +251,41 @@ public class TCPServer : MonoBehaviour
 
         try
         {
-            NetworkStream stream = connectedTcpClient.GetStream();
-            if (stream.CanWrite)
+            lock (streamLock)
             {
-                byte[] data = System.Text.Encoding.UTF8.GetBytes(message + "\n");
-                stream.Write(data, 0, data.Length);
-                stream.Flush();
-                Debug.Log("[TCPServer] Sent message: " + message);
+                if (clientStream != null && clientStream.CanWrite)
+                {
+                    byte[] data = System.Text.Encoding.UTF8.GetBytes(message + "\n");
+                    clientStream.Write(data, 0, data.Length);
+                    clientStream.Flush();
+                    Debug.Log("[TCPServer] Sent message: " + message);
+                }
+                else
+                {
+                    Debug.LogWarning("[TCPServer] Cannot send message, stream not available.");
+                }
             }
         }
         catch (Exception ex)
         {
             Debug.LogError($"[TCPServer] Failed to send message: {ex.Message}");
         }
+    }
+
+    void OnDestroy()
+    {
+        // Unsubscribe from scene events
+        SceneManager.sceneLoaded -= OnSceneLoaded;
+
+        // Clean up MessageHandler listeners
+        if (previousMessageHandler != null)
+        {
+            previousMessageHandler.sendMessageEvent.RemoveListener(SendMessageToClient);
+            messageEvent.RemoveListener(previousMessageHandler.OnReceive);
+            previousMessageHandler = null;
+        }
+
+        Debug.Log("[TCPServer] OnDestroy - cleaned up event subscriptions.");
     }
 
     void OnApplicationQuit()
@@ -349,25 +382,39 @@ public class TCPServer : MonoBehaviour
     {
         Debug.Log($"[TCPServer] Scene loaded: {scene.name}");
 
+        // Clean up old MessageHandler listeners to prevent stacking/memory leaks
+        if (previousMessageHandler != null)
+        {
+            Debug.Log("[TCPServer] Cleaning up old MessageHandler listeners.");
+            previousMessageHandler.sendMessageEvent.RemoveListener(SendMessageToClient);
+            messageEvent.RemoveListener(previousMessageHandler.OnReceive);
+            previousMessageHandler = null;
+        }
 
         // Notify tablet about scene change
         OnSceneChanged?.Invoke(scene.name);
 
-        // Send basic scene change notification to tablet
+        // Find and connect to new MessageHandler
         currentMessageHandler = FindObjectOfType<MessageHandler>();
 
+        if (currentMessageHandler != null)
         {
-
-            if (currentMessageHandler != null)
-            {
-                Debug.Log("[TCPServer] Found MessageHandler in new scene.");
-                currentMessageHandler.sendMessageEvent.AddListener(SendMessageToClient);
-                messageEvent.AddListener(currentMessageHandler.OnReceive);
-            }
-            else
-            {
-                Debug.LogWarning("[TCPServer] No MessageHandler found in new scene.");
-            }
+            Debug.Log("[TCPServer] Found MessageHandler in new scene, wiring up listeners.");
+            
+            // Always remove first to prevent duplicate registration (in case this is the same handler)
+            currentMessageHandler.sendMessageEvent.RemoveListener(SendMessageToClient);
+            messageEvent.RemoveListener(currentMessageHandler.OnReceive);
+            
+            // Now add the listeners
+            currentMessageHandler.sendMessageEvent.AddListener(SendMessageToClient);
+            messageEvent.AddListener(currentMessageHandler.OnReceive);
+            previousMessageHandler = currentMessageHandler;
+            
+            Debug.Log($"[TCPServer] Listener count on messageEvent: {messageEvent.GetPersistentEventCount()} persistent");
+        }
+        else
+        {
+            Debug.LogWarning("[TCPServer] No MessageHandler found in new scene.");
         }
     }
 
