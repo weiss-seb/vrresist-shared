@@ -1,8 +1,11 @@
 {
-    "name": "com.ovgu.vrresist.shared",
-    "rootNamespace": "OVGU.VAR.VRResist",
-    "references": [],
-    "includePlatforms": [],
+    "name": "com.ovgu.vrresist.shared.editor",
+    "references": [
+        "com.ovgu.vrresist.shared"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": false,
