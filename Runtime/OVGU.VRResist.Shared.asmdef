@@ -1,7 +1,9 @@
 {
     "name": "com.ovgu.vrresist.shared",
     "rootNamespace": "OVGU.VAR.VRResist",
-    "references": [],
+    "references": [
+        "Unity.TextMeshPro"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
