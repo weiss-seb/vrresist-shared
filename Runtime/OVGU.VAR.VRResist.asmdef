@@ -1,11 +1,7 @@
 {
-    "name": "com.ovgu.vrresist.shared",
+    "name": "OVGU.VAR.VRResist",
     "rootNamespace": "OVGU.VAR.VRResist",
-    "references": [
-        "Unity.TextMeshPro",
-        "TextureSendReceive",
-        "OVGU.VAR.VRResist"
-    ],
+    "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

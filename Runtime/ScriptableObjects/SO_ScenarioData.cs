@@ -21,48 +21,12 @@ namespace OVGU.VAR.VRResist
         [Tooltip("World Transforms for Cameras")]
         public CameraPosition[] cameraPositions;
 
-        [Header("Chefarzt Audio Configuration")]
-        [Tooltip("Audio clip names (identifiers) - actual AudioClip files are stored on HMD NPCController")]
-        public string[] chefarztAudioClips;
-        [Tooltip("German labels for UI buttons corresponding to audio clip names")]
-        public string[] chefarztAudioLabels;
-
-        [Tooltip("Animation emotions for each audio clip (must match array length of chefarztAudioClips)")]
-        public ENUM_TalkEmotion[] chefarztTalkEmotions;
-
-        [Header("Kollege Audio Configuration")]
-        [Tooltip("Audio clip names (identifiers) - actual AudioClip files are stored on HMD NPCController")]
-        public string[] kollegeAudioClips;
-        [Tooltip("German labels for UI buttons corresponding to audio clip names")]
-        public string[] kollegeAudioLabels;
-
-        [Tooltip("Animation emotions for each audio clip (must match array length of kollegeAudioClips)")]
-        public ENUM_TalkEmotion[] kollegeTalkEmotions;
-
-        [Header("Patient Audio Configuration")]
-        [Tooltip("Audio clip names (identifiers) - actual AudioClip files are stored on HMD NPCController")]
-        public string[] patientAudioClips;
-        [Tooltip("German labels for UI buttons corresponding to audio clip names")]
-        public string[] patientAudioLabels;
-        [Tooltip("Animation emotions for each audio clip (must match array length of patientAudioClips)")]
-        public ENUM_TalkEmotion[] patientTalkEmotions;
-
-        [Header("Father Audio Configuration")]
-        [Tooltip("Audio clip names (identifiers) - actual AudioClip files are stored on HMD NPCController")]
-        public string[] fatherAudioClips;
-        [Tooltip("German labels for UI buttons corresponding to audio clip names")]
-
-        public string[] fatherAudioLabels;
-        [Tooltip("Animation emotions for each audio clip (must match array length of fatherAudioClips)")]
-        public ENUM_TalkEmotion[] fatherTalkEmotions;
-
-        [Header("Mother Audio Configuration")]
-        [Tooltip("Audio clip names (identifiers) - actual AudioClip files are stored on HMD NPCController")]
-        public string[] motherAudioClips;
-        [Tooltip("German labels for UI buttons corresponding to audio clip names")]
-        public string[] motherAudioLabels;
-        [Tooltip("Animation emotions for each audio clip (must match array length of motherAudioClips)")]
-        public ENUM_TalkEmotion[] motherTalkEmotions;
+        [Header("Character Audio Configuration")]
+        public AudioClipData[] chefarztAudioData;
+        public AudioClipData[] kollegeAudioData;
+        public AudioClipData[] patientAudioData;
+        public AudioClipData[] fatherAudioData;
+        public AudioClipData[] motherAudioData;
 
         [Header("Character Setup")]
         [Tooltip("Names of GameObjects to find in the scene (will be found by GameObject.Find()). Configure these to match your scene's character GameObject names.")]
@@ -87,18 +51,18 @@ namespace OVGU.VAR.VRResist
         public Vector3 startPosition;
 
         /// <summary>
-        /// Get audio clips for a specific NPC
+        /// Get audio data for a specific NPC
         /// </summary>
-        public string[] GetAudioClipsForNPC(string npcName)
+        public AudioClipData[] GetAudioDataForNPC(string npcName)
         {
             switch (npcName.ToLower())
             {
-                case "chefarzt": return chefarztAudioClips;
-                case "kollege": return kollegeAudioClips;
-                case "patient": return patientAudioClips;
-                case "father": return fatherAudioClips;
-                case "mother": return motherAudioClips;
-                default: return new string[0];
+                case "chefarzt": return chefarztAudioData;
+                case "kollege": return kollegeAudioData;
+                case "patient": return patientAudioData;
+                case "father": return fatherAudioData;
+                case "mother": return motherAudioData;
+                default: return new AudioClipData[0];
             }
         }
 
@@ -236,5 +200,14 @@ namespace OVGU.VAR.VRResist
     {
         public Vector3 position;
         public Vector3 rotation;
+    }
+
+    [System.Serializable]
+    public class AudioClipData
+    {
+        public string clipName;
+        public string label;
+        public ENUM_TalkEmotion emotion;
+        public string[] keywords;
     }
 }
